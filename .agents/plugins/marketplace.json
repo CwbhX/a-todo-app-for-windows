@@ -1,0 +1,20 @@
+{
+  "name": "linework-local",
+  "interface": {
+    "displayName": "Linework Local"
+  },
+  "plugins": [
+    {
+      "name": "linework",
+      "source": {
+        "source": "local",
+        "path": "./plugins/linework"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

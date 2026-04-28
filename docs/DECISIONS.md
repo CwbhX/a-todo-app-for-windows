@@ -27,3 +27,7 @@ Database initialization seeds system theme mode, Today as the default view, and 
 ## 2026-04-28: Start UI With A Minimal Persisted Task Loop
 
 The first real UI slice stays inside the existing WPF shell: quick-add, persisted Today/Active/Done rows, and mark-done. Full editing, details behavior, archive/reopen UI, markdown preview, search, and polish remain deferred.
+
+## 2026-04-28: Add Minimal Plan Today Flow
+
+Unplanned Active tasks can now be planned for today from the task row. This keeps Today simple: it still only queries planned-for-today, due-today, or completed-today tasks, while the service updates the existing task's `PlannedForDate` and records a `PlannedForDateChanged` event.

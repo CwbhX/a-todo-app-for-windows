@@ -40,6 +40,10 @@ If this file conflicts with a more specific user prompt, follow the user prompt 
 - `skills/linework-pr-copy`: use when the user asks for a GitHub PR title/body, pull request description, or copy/paste-ready PR text for Linework changes.
 - `skills/linework-next-session-prompt`: use when the user asks for a next-session prompt, handoff prompt, continuation prompt, or next-agent prompt for Linework.
 
+## Project-local plugin
+
+- `plugins/linework`: repo-local plugin that bundles the three Linework skills for installation through Codex's plugin browser. After the plugin is installed/enabled, Codex app may surface enabled skills in the slash list and they can also be invoked with `$`.
+
 ---
 
 ## Hard constraints

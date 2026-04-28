@@ -42,4 +42,4 @@ First-run database initialization also seeds default settings:
 
 The app currently uses plain WPF shell controls. WPF-UI is referenced for later Fluent styling, but the shell keeps the dependency unused.
 
-The first persisted UI slice lives in `MainViewModel` and `MainWindow`: quick-add for Today/Active, persisted task rows for Today/Active/Done, and a mark-done button. Code-behind remains limited to initial async loading.
+The first persisted UI slice lives in `MainViewModel` and `MainWindow`: quick-add for Today/Active, persisted task rows for Today/Active/Done, a row-level Plan today action for unplanned Active tasks, and a mark-done button. Code-behind remains limited to initial async loading.

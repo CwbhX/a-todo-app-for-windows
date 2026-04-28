@@ -8,10 +8,11 @@ using System.Collections.ObjectModel;
 namespace Linework.ViewModels;
 
 public sealed record NavigationItemViewModel(string Name, string Description);
-public sealed record TaskRowViewModel(Guid Id, string Title, TaskItemStatus Status, string MetaText)
+public sealed record TaskRowViewModel(Guid Id, string Title, TaskItemStatus Status, DateOnly? PlannedForDate, string MetaText)
 {
     public bool IsDone => Status == TaskItemStatus.Done;
     public bool CanMarkDone => Status == TaskItemStatus.Active;
+    public bool CanPlanToday => Status == TaskItemStatus.Active && PlannedForDate is null;
 }
 
 public partial class MainViewModel(ITaskService taskService, IClock clock) : ObservableObject
@@ -78,6 +79,21 @@ public partial class MainViewModel(ITaskService taskService, IClock clock) : Obs
             var plannedForDate = SelectedViewName == "Today" ? clock.Today : (DateOnly?)null;
             await taskService.CreateTaskAsync(new CreateTaskRequest(title, PlannedForDate: plannedForDate));
             QuickAddTitle = string.Empty;
+            await RefreshTasksAsync();
+        });
+    }
+
+    [RelayCommand]
+    private async Task PlanTodayAsync(TaskRowViewModel task)
+    {
+        if (!task.CanPlanToday)
+        {
+            return;
+        }
+
+        await RunTaskListActionAsync(async () =>
+        {
+            await taskService.PlanForTodayAsync(task.Id);
             await RefreshTasksAsync();
         });
     }
@@ -150,17 +166,18 @@ public partial class MainViewModel(ITaskService taskService, IClock clock) : Obs
         };
     }
 
-    private static TaskRowViewModel ToRow(TaskItem task)
+    private TaskRowViewModel ToRow(TaskItem task)
     {
         var metaText = task.Status switch
         {
             TaskItemStatus.Done when task.CompletedAt is not null => $"Done {task.CompletedAt.Value.LocalDateTime:g}",
             TaskItemStatus.Done => "Done",
+            _ when task.PlannedForDate == clock.Today => "Planned today",
             _ when task.PlannedForDate is not null => $"Planned {task.PlannedForDate:MMM d}",
-            _ => "Active"
+            _ => "Unplanned"
         };
 
-        return new TaskRowViewModel(task.Id, task.Title, task.Status, metaText);
+        return new TaskRowViewModel(task.Id, task.Title, task.Status, task.PlannedForDate, metaText);
     }
 
     private string EmptyMessageForSelectedView()

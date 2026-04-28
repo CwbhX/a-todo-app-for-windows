@@ -1,0 +1,4 @@
+interface:
+  display_name: "Linework Next Session Prompt"
+  short_description: "Draft Linework handoff prompts."
+  default_prompt: "Use this skill to create a prompt for the next session or agent to continue Linework."

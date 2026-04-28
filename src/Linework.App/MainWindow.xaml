@@ -112,14 +112,33 @@
                                             <TextBlock Text="{Binding MetaText}" Foreground="{StaticResource MutedTextBrush}" Margin="0,4,0,0" />
                                         </StackPanel>
 
-                                        <Button Grid.Column="1"
-                                                Content="Done"
-                                                Command="{Binding DataContext.MarkDoneCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                CommandParameter="{Binding}"
-                                                IsEnabled="{Binding CanMarkDone}"
-                                                Padding="12,6"
-                                                Margin="16,0,0,0"
-                                                VerticalAlignment="Center" />
+                                        <StackPanel Grid.Column="1"
+                                                    Orientation="Horizontal"
+                                                    Margin="16,0,0,0"
+                                                    VerticalAlignment="Center">
+                                            <Button Content="Plan today"
+                                                    Command="{Binding DataContext.PlanTodayCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    CommandParameter="{Binding}"
+                                                    IsEnabled="{Binding CanPlanToday}"
+                                                    Padding="12,6"
+                                                    Margin="0,0,8,0">
+                                                <Button.Style>
+                                                    <Style TargetType="Button">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding CanPlanToday}" Value="False">
+                                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Button.Style>
+                                            </Button>
+                                            <Button Content="Done"
+                                                    Command="{Binding DataContext.MarkDoneCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    CommandParameter="{Binding}"
+                                                    IsEnabled="{Binding CanMarkDone}"
+                                                    Padding="12,6" />
+                                        </StackPanel>
                                     </Grid>
                                 </Border>
                             </DataTemplate>

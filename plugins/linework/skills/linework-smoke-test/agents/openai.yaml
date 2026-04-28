@@ -1,0 +1,4 @@
+interface:
+  display_name: "Linework Smoke Test"
+  short_description: "Run structured smoke tests for the Linework WPF app."
+  default_prompt: "Use this skill to give me the current Linework smoke-test command and checklist."

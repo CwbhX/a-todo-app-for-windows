@@ -176,6 +176,24 @@ public sealed class TaskServiceTests
         Assert.DoesNotContain(results, item => item.Id == oldTask.Id);
     }
 
+    [Fact]
+    public async Task PlanForToday_sets_planned_date_and_records_event()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var factory = new TestDbFactory();
+        await using var dbContext = await factory.CreateAsync(ct);
+        var clock = new FixedClock(new DateTimeOffset(2026, 4, 27, 12, 0, 0, TimeSpan.Zero));
+        var service = CreateService(dbContext, clock);
+        var task = await service.CreateTaskAsync(new CreateTaskRequest("Plan from active"), ct);
+
+        await service.PlanForTodayAsync(task.Id, ct);
+
+        var saved = await dbContext.TaskItems.SingleAsync(item => item.Id == task.Id, ct);
+        Assert.Equal(clock.Today, saved.PlannedForDate);
+        Assert.Contains(await dbContext.TaskEvents.Where(item => item.TaskItemId == task.Id).ToListAsync(ct), item => item.EventType == TaskEventType.PlannedForDateChanged);
+        Assert.Contains(await service.GetTodayTasksAsync(ct), item => item.Id == task.Id);
+    }
+
     private static TaskService CreateService(Linework.Data.LineworkDbContext dbContext, FixedClock clock)
     {
         return new TaskService(dbContext, clock, new SettingsService(dbContext));

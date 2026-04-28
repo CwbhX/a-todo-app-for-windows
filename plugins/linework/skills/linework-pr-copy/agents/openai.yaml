@@ -1,0 +1,4 @@
+interface:
+  display_name: "Linework PR Copy"
+  short_description: "Draft copyable GitHub PR titles and bodies for Linework changes."
+  default_prompt: "Use this skill to draft a PR title and body I can copy separately for GitHub."

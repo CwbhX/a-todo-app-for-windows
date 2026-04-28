@@ -23,6 +23,7 @@ public interface ITaskService
     Task<IReadOnlyList<TaskItem>> GetTodayTasksAsync(CancellationToken ct = default);
     Task<IReadOnlyList<TaskItem>> GetActiveTasksAsync(CancellationToken ct = default);
     Task<IReadOnlyList<TaskItem>> GetDoneTasksAsync(DoneQuery query, CancellationToken ct = default);
+    Task PlanForTodayAsync(Guid taskId, CancellationToken ct = default);
     Task MarkDoneAsync(Guid taskId, CancellationToken ct = default);
     Task ReopenAsync(Guid taskId, CancellationToken ct = default);
     Task ArchiveAsync(Guid taskId, CancellationToken ct = default);
@@ -130,6 +131,18 @@ public sealed class TaskService(LineworkDbContext dbContext, IClock clock, ISett
             .OrderByDescending(task => task.CompletedAt)
             .ThenBy(task => task.Title)
             .ToListAsync(ct);
+    }
+
+    public async Task PlanForTodayAsync(Guid taskId, CancellationToken ct = default)
+    {
+        var task = await FindTaskForUpdateAsync(taskId, ct);
+        var now = clock.Now.ToUniversalTime();
+
+        task.PlannedForDate = clock.Today;
+        task.UpdatedAt = now;
+        AddEvent(task.Id, TaskEventType.PlannedForDateChanged, now);
+
+        await dbContext.SaveChangesAsync(ct);
     }
 
     public async Task MarkDoneAsync(Guid taskId, CancellationToken ct = default)

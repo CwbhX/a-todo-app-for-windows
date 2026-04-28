@@ -25,6 +25,7 @@ Status: mostly complete for the current foundation. The app still uses `EnsureCr
 
 - Implement quick add. Started for Today/Active.
 - Show persisted task lists. Started for Today/Active/Done.
+- Plan existing unplanned Active tasks for today. Implemented from the minimal task row.
 - Edit title, notes, important flag, project, planned date, due date, and reminder date.
 - Mark done, reopen, and archive from the UI. Mark done is started from the minimal task list.
 

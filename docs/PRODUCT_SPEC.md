@@ -24,6 +24,7 @@ Linework is a local-first Windows utility for tracking active work, today's plan
 - Active shows unfinished tasks plus recently completed tasks during the configured done grace period.
 - Done shows completed tasks.
 - Marking done from the minimal UI updates persisted state and keeps recent completions visible where the service query includes them.
+- Unplanned Active tasks can be planned for today from the minimal task row, which makes them appear in Today.
 
 ## Deferred
 
