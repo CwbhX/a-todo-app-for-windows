@@ -1,4 +1,4 @@
-# AGENTS.md
+﻿# AGENTS.md
 
 Project-specific instructions for Codex and other coding agents working in this repository.
 
@@ -8,7 +8,7 @@ This file should stay practical and current. Prefer updating it when the agent r
 
 ## Project identity
 
-This repository contains **WorkDone**, a Windows-native, local-first personal task and done-history app.
+This repository contains **Linework**, a Windows-native, local-first personal task and done-history app.
 
 The app is a hybrid between:
 
@@ -73,7 +73,7 @@ Prefer this loop:
 
 Do not do giant rewrites unless the user explicitly asks for a rewrite.
 
-Avoid broad “cleanup” edits unrelated to the task. If cleanup is valuable, mention it as a follow-up.
+Avoid broad â€œcleanupâ€ edits unrelated to the task. If cleanup is valuable, mention it as a follow-up.
 
 Do not introduce clever abstractions before the app needs them. This repo should stay friendly to quick iteration.
 
@@ -104,7 +104,7 @@ dotnet build -p:EnableWindowsTargeting=true
 Run app on Windows:
 
 ```powershell
-dotnet run --project src/WorkDone.App
+dotnet run --project src/Linework.App
 ```
 
 Run tests:
@@ -129,7 +129,7 @@ Keep the repo close to this shape:
 
 ```text
 src/
-  WorkDone.App/
+  Linework.App/
     Views/
     ViewModels/
     Models/
@@ -139,7 +139,7 @@ src/
     Infrastructure/
 
 tests/
-  WorkDone.Tests/
+  Linework.Tests/
 
 docs/
   PRODUCT_SPEC.md
@@ -167,11 +167,11 @@ Rules:
 - ViewModels should use CommunityToolkit.Mvvm.
 - ViewModels should not directly own EF Core query logic.
 - Services should contain application behavior.
-- `WorkDoneDbContext` should be the EF Core boundary.
+- `LineworkDbContext` should be the EF Core boundary.
 - Keep external integrations behind interfaces.
 - Do not create a separate class library unless there is a strong reason.
 - Do not introduce MediatR, CQRS, Redux-style state management, or plugin systems for v1.
-- Do not create “enterprise clean architecture” folders just to look formal.
+- Do not create â€œenterprise clean architectureâ€ folders just to look formal.
 
 ---
 
@@ -216,7 +216,7 @@ Use SQLite through EF Core.
 Default database path should be under:
 
 ```text
-%LOCALAPPDATA%\WorkDone\workdone.db
+%LOCALAPPDATA%\Linework\linework.db
 ```
 
 Do not store user data in the repo.
@@ -261,7 +261,7 @@ Do not build a full rich-text editor in v1.
 
 ## Search rules
 
-Search should eventually feel “smart,” but keep early implementation simple.
+Search should eventually feel â€œsmart,â€ but keep early implementation simple.
 
 v1 search should aim to cover:
 
@@ -294,7 +294,7 @@ Do not hardcode API keys.
 
 Do not log secrets.
 
-AI should work from structured local summary data. The app’s deterministic summary logic should not depend on an LLM.
+AI should work from structured local summary data. The appâ€™s deterministic summary logic should not depend on an LLM.
 
 ---
 
@@ -515,7 +515,7 @@ If a Windows-only command cannot run in the current environment, still run what 
 
 Unless changed by the user, assume:
 
-- App name: `WorkDone`.
+- App name: `Linework`.
 - Default view: Today.
 - Done grace period: 1 day.
 - Delete/archive behavior: archive by default.
@@ -528,3 +528,4 @@ Unless changed by the user, assume:
 - AI summaries: future phase.
 - OS notifications: future phase.
 - Tray icon/global hotkey: future phase.
+

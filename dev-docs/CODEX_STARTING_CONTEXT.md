@@ -1,4 +1,4 @@
-# WorkDone - Codex Starting Context
+﻿# Linework - Codex Starting Context
 
 This document is the canonical starting context for Codex. Use it before making architectural decisions. The goal is to build a simple, native Windows app that helps track both active work and completed work over time.
 
@@ -8,13 +8,13 @@ Place this file at:
 /docs/CODEX_STARTING_CONTEXT.md
 ```
 
-Suggested app/repo name: `WorkDone`. If the app is renamed later, keep the architecture and product intent the same.
+Suggested app/repo name: `Linework`. If the app is renamed later, keep the architecture and product intent the same.
 
 ---
 
 ## 1. Product intent
 
-`WorkDone` is a local-first Windows-native personal task and done-history app.
+`Linework` is a local-first Windows-native personal task and done-history app.
 
 It is not just a generic todo list. It should feel like a lightweight personal work ledger:
 
@@ -164,9 +164,9 @@ It is acceptable to leave small interfaces/stubs for future features, but do not
 Keep the app simple. Use one WPF app project and one test project.
 
 ```text
-WorkDone/
+Linework/
   README.md
-  WorkDone.sln
+  Linework.sln
 
   docs/
     CODEX_STARTING_CONTEXT.md
@@ -176,8 +176,8 @@ WorkDone/
     DECISIONS.md
 
   src/
-    WorkDone.App/
-      WorkDone.App.csproj
+    Linework.App/
+      Linework.App.csproj
       App.xaml
       App.xaml.cs
       MainWindow.xaml
@@ -209,7 +209,7 @@ WorkDone/
         Enums.cs
 
       Data/
-        WorkDoneDbContext.cs
+        LineworkDbContext.cs
         DbInitializer.cs
         Migrations/
         Converters/
@@ -239,8 +239,8 @@ WorkDone/
         Result.cs
 
   tests/
-    WorkDone.Tests/
-      WorkDone.Tests.csproj
+    Linework.Tests/
+      Linework.Tests.csproj
       TaskServiceTests.cs
       ProjectServiceTests.cs
       SearchServiceTests.cs
@@ -256,22 +256,22 @@ WorkDone/
 Target Windows. The project should build from PowerShell using the .NET SDK.
 
 ```powershell
-dotnet new sln -n WorkDone
+dotnet new sln -n Linework
 
-dotnet new wpf -n WorkDone.App -o src/WorkDone.App
+dotnet new wpf -n Linework.App -o src/Linework.App
 
-dotnet sln add src/WorkDone.App/WorkDone.App.csproj
+dotnet sln add src/Linework.App/Linework.App.csproj
 
-dotnet add src/WorkDone.App package CommunityToolkit.Mvvm
-dotnet add src/WorkDone.App package Microsoft.EntityFrameworkCore.Sqlite
-dotnet add src/WorkDone.App package Microsoft.EntityFrameworkCore.Design
-dotnet add src/WorkDone.App package WPF-UI
-dotnet add src/WorkDone.App package Markdig
+dotnet add src/Linework.App package CommunityToolkit.Mvvm
+dotnet add src/Linework.App package Microsoft.EntityFrameworkCore.Sqlite
+dotnet add src/Linework.App package Microsoft.EntityFrameworkCore.Design
+dotnet add src/Linework.App package WPF-UI
+dotnet add src/Linework.App package Markdig
 
-dotnet new xunit -n WorkDone.Tests -o tests/WorkDone.Tests
-dotnet sln add tests/WorkDone.Tests/WorkDone.Tests.csproj
-dotnet add tests/WorkDone.Tests reference src/WorkDone.App/WorkDone.App.csproj
-dotnet add tests/WorkDone.Tests package Microsoft.EntityFrameworkCore.Sqlite
+dotnet new xunit -n Linework.Tests -o tests/Linework.Tests
+dotnet sln add tests/Linework.Tests/Linework.Tests.csproj
+dotnet add tests/Linework.Tests reference src/Linework.App/Linework.App.csproj
+dotnet add tests/Linework.Tests package Microsoft.EntityFrameworkCore.Sqlite
 
 dotnet build
 dotnet test
@@ -282,9 +282,9 @@ If EF migrations are used from CLI:
 ```powershell
 dotnet tool install --global dotnet-ef
 
-dotnet ef migrations add InitialCreate --project src/WorkDone.App --startup-project src/WorkDone.App
+dotnet ef migrations add InitialCreate --project src/Linework.App --startup-project src/Linework.App
 
-dotnet ef database update --project src/WorkDone.App --startup-project src/WorkDone.App
+dotnet ef database update --project src/Linework.App --startup-project src/Linework.App
 ```
 
 The WPF project should target Windows explicitly:
@@ -303,9 +303,9 @@ The WPF project should target Windows explicitly:
 Use a local app data folder:
 
 ```text
-%LOCALAPPDATA%\WorkDone\workdone.db
-%LOCALAPPDATA%\WorkDone\logs\
-%LOCALAPPDATA%\WorkDone\exports\
+%LOCALAPPDATA%\Linework\linework.db
+%LOCALAPPDATA%\Linework\logs\
+%LOCALAPPDATA%\Linework\exports\
 ```
 
 `AppPaths` should own all paths.
@@ -995,7 +995,7 @@ These must always work:
 dotnet restore
 dotnet build
 dotnet test
-dotnet run --project src/WorkDone.App
+dotnet run --project src/Linework.App
 ```
 
 Codex should run `dotnet build` after every meaningful phase. If tests exist, run `dotnet test` too.
@@ -1016,7 +1016,7 @@ Example test setup:
 var connection = new SqliteConnection("DataSource=:memory:");
 await connection.OpenAsync();
 
-var options = new DbContextOptionsBuilder<WorkDoneDbContext>()
+var options = new DbContextOptionsBuilder<LineworkDbContext>()
     .UseSqlite(connection)
     .Options;
 ```
@@ -1230,12 +1230,12 @@ Implement:
 Use this prompt to start the repo.
 
 ```text
-You are building a Windows-native personal task and done-history app called WorkDone.
+You are building a Windows-native personal task and done-history app called Linework.
 
 Before coding, read docs/CODEX_STARTING_CONTEXT.md if it exists. Treat it as canonical product and architecture context.
 
 Goal:
-Build a simple local-first WPF desktop app for Windows. It should help me track active work, today’s tasks, and completed work over time. It is not just a todo list. It is also a lightweight work ledger so future weekly/monthly summaries are possible.
+Build a simple local-first WPF desktop app for Windows. It should help me track active work, todayâ€™s tasks, and completed work over time. It is not just a todo list. It is also a lightweight work ledger so future weekly/monthly summaries are possible.
 
 Hard constraints:
 - No Electron.
@@ -1307,7 +1307,7 @@ Codex should follow these rules while implementing:
 Use these unless the user changes them:
 
 ```text
-App name: WorkDone
+App name: Linework
 Default view: Today
 Theme: Follow system
 Done grace period: 1 day
@@ -1317,7 +1317,7 @@ Project assignment: Optional
 Notes format: Markdown
 Markdown preview: WPF-native preview, no browser
 Search: Search all non-archived tasks by default, include done tasks
-Data location: %LOCALAPPDATA%\WorkDone\workdone.db
+Data location: %LOCALAPPDATA%\Linework\linework.db
 Export format: Markdown first, JSON backup later
 AI: Disabled by default, future feature only
 ```
@@ -1379,4 +1379,5 @@ These are not required reading for every task, but they explain the chosen stack
 - Markdig: https://github.com/xoofx/markdig
 - WPF UI: https://github.com/lepoco/wpfui
 - Ollama OpenAI compatibility: https://docs.ollama.com/api/openai-compatibility
+
 
