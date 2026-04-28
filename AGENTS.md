@@ -405,6 +405,17 @@ Avoid adding:
 
 If a package is added, explain why in the final summary.
 
+## Security and environment hygiene
+
+Prefer boring, official, durable setup over clever local workarounds.
+
+- Install SDKs and tools from official vendor sources whenever practical.
+- Be conservative with new dependencies, especially packages that add networking, telemetry, background services, browser runtimes, code execution, or broad transitive dependency trees.
+- Before adding or upgrading a dependency, explain what it is for and why it is trusted enough for this local-first app.
+- Do not create temporary command shims, fake executables, PATH shadowing wrappers, or aliases for common tools such as `dotnet`, `git`, or package managers.
+- If a required CLI is missing or not on PATH, either use the installed executable by its real path temporarily or ask the user to fix the durable environment configuration.
+- Keep generated SDK caches, tool folders, and downloaded artifacts out of source control unless they are intentionally part of the repo.
+
 ---
 
 ## Git and file hygiene

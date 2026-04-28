@@ -8,15 +8,15 @@ public sealed class TestDbFactory : IAsyncDisposable
 {
     private readonly SqliteConnection _connection = new("DataSource=:memory:");
 
-    public async Task<LineworkDbContext> CreateAsync()
+    public async Task<LineworkDbContext> CreateAsync(CancellationToken ct = default)
     {
-        await _connection.OpenAsync();
+        await _connection.OpenAsync(ct);
         var options = new DbContextOptionsBuilder<LineworkDbContext>()
             .UseSqlite(_connection)
             .Options;
 
         var dbContext = new LineworkDbContext(options);
-        await dbContext.Database.EnsureCreatedAsync();
+        await dbContext.Database.EnsureCreatedAsync(ct);
         return dbContext;
     }
 

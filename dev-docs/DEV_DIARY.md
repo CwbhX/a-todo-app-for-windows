@@ -15,6 +15,110 @@ Use this diary for session history and handoff context, not as a replacement for
 
 ---
 
+## 2026-04-28 - Phase 2 Database Hardening Start
+
+### Starting Point
+
+The user asked to continue from the Phase 1 foundation, first verifying the SDK/build baseline and then staying inside Phase 2 only: database hardening, settings defaults, converter tests, DB creation tests, ProjectService tests, and Done-query tests.
+
+The .NET SDK was initially installed but not visible on PATH in this Codex shell. `C:\Program Files\dotnet\dotnet.exe` existed and reported SDK `10.0.203`. The user PATH was updated to include `C:\Program Files\dotnet`; Codex still prepended that path in commands because the running shell had already inherited the old environment.
+
+### Foundation Verification
+
+Ran:
+
+```powershell
+dotnet --info
+dotnet restore
+dotnet build
+dotnet test
+```
+
+Initial build found two Phase 1 compile issues:
+
+- `AppPaths.cs` needed `using System.IO`.
+- `NullableDateOnlyIsoStringConverter` used `value is null` inside an EF expression tree, which is not supported there.
+
+Both were fixed with minimal edits. After that, the foundation built and the original 6 tests passed.
+
+### Phase 2 Changes
+
+Kept `EnsureCreated` temporarily and documented the decision in `docs/DECISIONS.md`, `docs/ARCHITECTURE.md`, and `docs/IMPLEMENTATION_PLAN.md`.
+
+Why: the schema is still early and fluid. Adding EF migrations now would require extra tooling before there is real user data to preserve. Initial migrations should be added before distributing builds that may contain real user data.
+
+Added first-run settings defaults:
+
+- `theme.mode` = `System`
+- `navigation.defaultView` = `Today`
+- `tasks.doneGracePeriodDays` = `1`
+
+Added enums for those defaults:
+
+- `AppThemeMode`
+- `AppDefaultView`
+
+Updated `SettingsService` to serialize enums as readable JSON strings via `JsonStringEnumConverter`.
+
+Added/expanded tests:
+
+- date/time converter round trips for `DateTimeOffset`, nullable `DateTimeOffset`, and nullable `DateOnly`
+- file-backed DB creation plus default settings seeding via `DbInitializer`
+- ProjectService create/list behavior
+- TaskService Done-query behavior for completed-only results and completed-date filtering
+
+Cleaned the existing xUnit analyzer warnings by passing `TestContext.Current.CancellationToken` through test async calls.
+
+### Files Changed
+
+- `.gitignore`
+- `src/Linework.App/Data/Converters/NullableDateOnlyIsoStringConverter.cs`
+- `src/Linework.App/Data/DbInitializer.cs`
+- `src/Linework.App/Infrastructure/AppPaths.cs`
+- `src/Linework.App/Models/Enums.cs`
+- `src/Linework.App/Services/SettingsService.cs`
+- `tests/Linework.Tests/DateTimeConverterTests.cs`
+- `tests/Linework.Tests/DbInitializerTests.cs`
+- `tests/Linework.Tests/ProjectServiceTests.cs`
+- `tests/Linework.Tests/TaskServiceTests.cs`
+- `tests/Linework.Tests/TestDbFactory.cs`
+- `docs/ARCHITECTURE.md`
+- `docs/IMPLEMENTATION_PLAN.md`
+- `docs/DECISIONS.md`
+- `dev-docs/DEV_DIARY.md`
+
+### Verification Results
+
+Final verification:
+
+```powershell
+dotnet restore
+dotnet build
+dotnet test
+```
+
+Results:
+
+- restore succeeded
+- build succeeded with 0 warnings and 0 errors
+- tests passed: 14 passed, 0 failed, 0 skipped
+
+Also searched for the requested stale-name variants. No stale-name matches remained.
+
+### Known Risks
+
+The app still uses `EnsureCreated`, so migrations are not yet available for schema evolution. This is acceptable for this early phase but must be revisited before real user data is at risk.
+
+`TaskService` still has a hardcoded one-day done grace period. The default setting is seeded, but the service does not consume it yet. That can wait until settings are wired into runtime behavior.
+
+### Recommended Next Prompt
+
+```text
+Continue Linework Phase 2/early Phase 3. First run dotnet restore, dotnet build, and dotnet test. Then wire the seeded done grace period setting into TaskService without overbuilding settings UI. Keep EnsureCreated for now unless you are ready to add the initial EF migration. Begin the smallest persisted task-list UI step only if the service/data layer remains green.
+```
+
+---
+
 ## 2026-04-27 - Phase 1 Foundation And Rename To Linework
 
 ### Starting Point
@@ -24,7 +128,7 @@ The repo was effectively blank except for agent/project context:
 - `AGENTS.md`
 - `dev-docs/CODEX_STARTING_CONTEXT.md`
 
-Both documents still described the app as `WorkDone`. The user clarified that the app is now named `Linework` and asked for Phase 1 only: solution setup, WPF app project, xUnit test project, basic repo structure, placeholder WPF shell, initial MVVM ViewModels, initial domain models, EF Core SQLite DbContext, service interfaces/placeholders, starter docs, and practical TaskService tests.
+Both documents still described the app by its previous name. The user clarified that the app is now named `Linework` and asked for Phase 1 only: solution setup, WPF app project, xUnit test project, basic repo structure, placeholder WPF shell, initial MVVM ViewModels, initial domain models, EF Core SQLite DbContext, service interfaces/placeholders, starter docs, and practical TaskService tests.
 
 The user also explicitly said not to implement AI summaries, sync, recurring tasks, system tray, OS notifications, full search, full markdown rendering, or production UI yet.
 
@@ -142,7 +246,7 @@ Updated:
 - `AGENTS.md`
 - `dev-docs/CODEX_STARTING_CONTEXT.md`
 
-Why: both still used the old `WorkDone` name. The user explicitly requested stale references to be updated across repo and docs.
+Why: both still used the previous app name. The user explicitly requested stale references to be updated across repo and docs.
 
 ### Packages Added
 
@@ -320,16 +424,7 @@ This means the repo has not yet been compiler-verified. The next session should 
 
 ### Stale Name Sweep
 
-Searched for stale names:
-
-- `WorkDone`
-- `workdone`
-- `WORKDONE`
-- `Work Done`
-- `LineWork`
-- `Line Work`
-
-Final case-sensitive search found no matches.
+Searched for the requested stale-name variants. Final case-sensitive search found no matches.
 
 ### Known Risks
 
@@ -375,14 +470,14 @@ Suggested PR body:
 
 ```md
 ## Summary
-- Rename project/docs from WorkDone to Linework
+- Rename project/docs from the previous app name to Linework
 - Add initial .NET 10 WPF solution with `Linework.App` and `Linework.Tests`
 - Add placeholder shell UI, MVVM ViewModels, domain models, EF Core SQLite DbContext, infrastructure, and service boundaries
 - Add basic `TaskService` lifecycle behavior and SQLite in-memory tests
 - Add starter docs for product spec, architecture, implementation plan, and decisions
 
 ## Verification
-- Searched for stale names: `WorkDone`, `workdone`, `WORKDONE`, `Work Done`, `LineWork`, `Line Work`
+- Searched for the requested stale-name variants
 - `dotnet restore`, `dotnet build`, and `dotnet test` could not run because `dotnet` is not available on PATH in the current environment
 
 ## Notes

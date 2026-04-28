@@ -21,13 +21,21 @@ The default database path is:
 %LOCALAPPDATA%\Linework\linework.db
 ```
 
+The app currently uses `EnsureCreated` during startup. This is intentional while the schema is still in the foundation phase. Initial EF migrations should be introduced before a build with real user data is distributed.
+
+First-run database initialization also seeds default settings:
+
+- theme mode: system
+- default view: Today
+- done grace period: 1 day
+
 ## Services
 
 - `TaskService` owns task lifecycle behavior and task events.
 - `ProjectService` owns project creation/listing placeholders.
 - `SearchService` starts with simple fallback search; FTS5 is deferred.
 - `MarkdownService` wraps Markdig parsing; WPF-native rendering is deferred.
-- `SettingsService` stores JSON values in `AppSetting`.
+- `SettingsService` stores JSON values in `AppSetting` and uses readable enum strings.
 - Export, reminder, summary, and AI boundaries exist only as placeholders.
 
 ## UI

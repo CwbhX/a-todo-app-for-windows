@@ -12,10 +12,14 @@
 
 ## Phase 2: Database Hardening
 
-- Add migrations or a clear migration strategy.
+- Keep `EnsureCreated` temporarily and document the migration strategy.
 - Verify date/time converters with additional tests.
 - Add settings defaults.
 - Add project service tests.
+- Add database creation/default-seeding tests.
+- Add Done-query filtering tests.
+
+Status: started. The app still uses `EnsureCreated`, with initial migrations deferred until the schema is less fluid and before builds with real user data are distributed.
 
 ## Phase 3: Core Task Flow
 

@@ -8,7 +8,7 @@ public sealed class NullableDateOnlyIsoStringConverter : ValueConverter<DateOnly
     public NullableDateOnlyIsoStringConverter()
         : base(
             value => value.HasValue ? value.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) : null,
-            value => value is null ? null : DateOnly.ParseExact(value, "yyyy-MM-dd", CultureInfo.InvariantCulture))
+            value => value == null ? null : DateOnly.ParseExact(value, "yyyy-MM-dd", CultureInfo.InvariantCulture))
     {
     }
 }

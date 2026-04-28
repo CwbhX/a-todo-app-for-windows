@@ -20,3 +20,19 @@ public enum TaskEventType
     ProjectChanged = 8,
     ImportantChanged = 9
 }
+
+public enum AppThemeMode
+{
+    System = 0,
+    Light = 1,
+    Dark = 2
+}
+
+public enum AppDefaultView
+{
+    Today = 0,
+    Active = 1,
+    Done = 2,
+    Projects = 3,
+    Search = 4
+}
