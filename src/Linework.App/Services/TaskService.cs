@@ -28,9 +28,9 @@ public interface ITaskService
     Task ArchiveAsync(Guid taskId, CancellationToken ct = default);
 }
 
-public sealed class TaskService(LineworkDbContext dbContext, IClock clock) : ITaskService
+public sealed class TaskService(LineworkDbContext dbContext, IClock clock, ISettingsService settingsService) : ITaskService
 {
-    private static readonly TimeSpan DoneGracePeriod = TimeSpan.FromDays(1);
+    private const int DefaultDoneGracePeriodDays = 1;
 
     public async Task<TaskItem> CreateTaskAsync(CreateTaskRequest request, CancellationToken ct = default)
     {
@@ -91,7 +91,8 @@ public sealed class TaskService(LineworkDbContext dbContext, IClock clock) : ITa
 
     public async Task<IReadOnlyList<TaskItem>> GetActiveTasksAsync(CancellationToken ct = default)
     {
-        var cutoff = clock.Now.ToUniversalTime().Subtract(DoneGracePeriod);
+        var doneGracePeriod = await GetDoneGracePeriodAsync(ct);
+        var cutoff = clock.Now.ToUniversalTime().Subtract(doneGracePeriod);
 
         return await dbContext.TaskItems
             .AsNoTracking()
@@ -192,5 +193,11 @@ public sealed class TaskService(LineworkDbContext dbContext, IClock clock) : ITa
     private static bool IsLocalDate(DateTimeOffset? value, DateOnly date)
     {
         return value.HasValue && DateOnly.FromDateTime(value.Value.LocalDateTime) == date;
+    }
+
+    private async Task<TimeSpan> GetDoneGracePeriodAsync(CancellationToken ct)
+    {
+        var configuredDays = await settingsService.GetAsync<int?>(SettingKeys.DoneGracePeriodDays, ct);
+        return TimeSpan.FromDays(Math.Max(0, configuredDays ?? DefaultDoneGracePeriodDays));
     }
 }

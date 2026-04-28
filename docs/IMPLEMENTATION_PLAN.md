@@ -19,14 +19,14 @@
 - Add database creation/default-seeding tests.
 - Add Done-query filtering tests.
 
-Status: started. The app still uses `EnsureCreated`, with initial migrations deferred until the schema is less fluid and before builds with real user data are distributed.
+Status: mostly complete for the current foundation. The app still uses `EnsureCreated`, with initial migrations deferred until the schema is less fluid and before builds with real user data are distributed. The seeded done grace period is now consumed by `TaskService`.
 
 ## Phase 3: Core Task Flow
 
-- Implement quick add.
-- Show persisted task lists.
+- Implement quick add. Started for Today/Active.
+- Show persisted task lists. Started for Today/Active/Done.
 - Edit title, notes, important flag, project, planned date, due date, and reminder date.
-- Mark done, reopen, and archive from the UI.
+- Mark done, reopen, and archive from the UI. Mark done is started from the minimal task list.
 
 ## Phase 4: Markdown
 

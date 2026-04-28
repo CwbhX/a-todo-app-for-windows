@@ -31,7 +31,7 @@ First-run database initialization also seeds default settings:
 
 ## Services
 
-- `TaskService` owns task lifecycle behavior and task events.
+- `TaskService` owns task lifecycle behavior and task events. It reads `tasks.doneGracePeriodDays` through `SettingsService` when querying Active tasks, falling back to one day if the setting is missing.
 - `ProjectService` owns project creation/listing placeholders.
 - `SearchService` starts with simple fallback search; FTS5 is deferred.
 - `MarkdownService` wraps Markdig parsing; WPF-native rendering is deferred.
@@ -40,4 +40,6 @@ First-run database initialization also seeds default settings:
 
 ## UI
 
-Phase 1 uses plain WPF shell controls. WPF-UI is referenced for later Fluent styling, but the shell keeps the dependency unused until it can be verified cleanly in the CLI build.
+The app currently uses plain WPF shell controls. WPF-UI is referenced for later Fluent styling, but the shell keeps the dependency unused.
+
+The first persisted UI slice lives in `MainViewModel` and `MainWindow`: quick-add for Today/Active, persisted task rows for Today/Active/Done, and a mark-done button. Code-behind remains limited to initial async loading.

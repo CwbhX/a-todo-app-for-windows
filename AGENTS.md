@@ -34,6 +34,11 @@ Use this file for recurring engineering rules. Use the docs above for deeper pro
 
 If this file conflicts with a more specific user prompt, follow the user prompt and then suggest updating `AGENTS.md` if the change should persist.
 
+## Project-local skills
+
+- `skills/linework-smoke-test`: use when the user asks for a Linework smoke test, smokescreen test, manual app test script, or wants to report app behavior as good/not good/details.
+- `skills/linework-pr-copy`: use when the user asks for a GitHub PR title/body, pull request description, or copy/paste-ready PR text for Linework changes.
+
 ---
 
 ## Hard constraints

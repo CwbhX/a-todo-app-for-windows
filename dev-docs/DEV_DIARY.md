@@ -15,6 +15,187 @@ Use this diary for session history and handoff context, not as a replacement for
 
 ---
 
+## 2026-04-28 - Project-Local Smoke Test Skill
+
+Added a project-local Codex skill at `skills/linework-smoke-test` after the user asked for a reusable "smokescreen" testing workflow. The skill is intentionally local to the repository, not installed into the global Codex skills directory.
+
+The skill tells future agents to always provide the app run command:
+
+```powershell
+dotnet run --project src/Linework.App
+```
+
+It also structures the current manual smoke test into major areas with subtests:
+
+- Launch and navigation
+- Today quick add
+- Active quick add
+- Mark done
+- Known current gaps
+
+The expected user reporting format is `Good`, `Not good`, or details per major area, so future sessions can quickly classify results as pass, expected limitation, or bug candidate.
+
+Updated `AGENTS.md` to point future agents at this project-local skill.
+
+Verification:
+
+```powershell
+python 'C:\Users\Clement Hathaway\.codex\skills\.system\skill-creator\scripts\quick_validate.py' skills/linework-smoke-test
+```
+
+Result: skill is valid.
+
+---
+
+## 2026-04-28 - Project-Local PR Copy Skill
+
+Added a project-local Codex skill at `skills/linework-pr-copy` after the user asked to make the reusable PR title/body workflow into a project skill.
+
+The skill tells future agents to produce GitHub-ready PR text with separate copyable blocks:
+
+- PR title
+- PR body
+
+The body template includes Summary, Verification, and Notes sections, and it reminds agents to include only changes and verification that actually happened.
+
+Updated `AGENTS.md` to point future agents at this project-local skill.
+
+Verification:
+
+```powershell
+python 'C:\Users\Clement Hathaway\.codex\skills\.system\skill-creator\scripts\quick_validate.py' skills/linework-pr-copy
+```
+
+Result: skill is valid.
+
+---
+
+## 2026-04-28 - Minimal Persisted Task UI Start
+
+### Starting Point
+
+The user asked to continue Linework by verifying the current foundation first, then moving into the smallest useful vertical slice toward a real app UI.
+
+The requested starting reads were completed:
+
+- `AGENTS.md`
+- `CODEX_STARTING_CONTEXT.md`
+- `dev-docs/DEV_DIARY.md`
+- `docs/PRODUCT_SPEC.md`
+- `docs/ARCHITECTURE.md`
+- `docs/IMPLEMENTATION_PLAN.md`
+- `docs/DECISIONS.md`
+
+### Foundation Verification
+
+Initial sandboxed `dotnet restore` failed because the SDK tried to create first-run files under `C:\Users\CodexSandboxOffline\.dotnet`, which was not writable from the sandbox. The same issue affected sandboxed build/test. The commands succeeded when run with approved elevated permissions.
+
+Initial Git status also hit Git's dubious-ownership protection because the repo owner SID differs from the sandbox user SID. Git reads in this session used `git -c safe.directory='C:/Users/Clement Hathaway/GitHub/a-todo-app-for-windows' ...` instead of changing global config.
+
+Baseline results before edits:
+
+```powershell
+dotnet restore
+dotnet build
+dotnet test
+```
+
+- restore succeeded
+- build succeeded with 0 warnings and 0 errors
+- tests passed: 14 passed, 0 failed, 0 skipped
+
+### Changes
+
+Wired the seeded `tasks.doneGracePeriodDays` setting into `TaskService.GetActiveTasksAsync`. The service now reads the setting through `ISettingsService` and falls back to one day if the setting is missing. Negative configured values are clamped to zero days.
+
+Added a focused service test proving that a configured three-day grace period keeps completed tasks visible in Active for two days and hides them after four days.
+
+Started the smallest persisted WPF task loop:
+
+- quick-add textbox and button for Today/Active
+- Today quick-add creates a task planned for today so it appears immediately in the Today query
+- Active quick-add creates an unplanned active task
+- Today, Active, and Done views display persisted rows from `TaskService`
+- rows can be marked done from the UI
+- done rows render with strikethrough text and remain visible wherever service queries include them
+
+Kept WPF changes deliberately small. `MainWindow` only triggers initial async load in code-behind; task behavior stays in `MainViewModel` and `TaskService`.
+
+Updated:
+
+- `src/Linework.App/Services/TaskService.cs`
+- `src/Linework.App/ViewModels/MainViewModel.cs`
+- `src/Linework.App/MainWindow.xaml`
+- `src/Linework.App/MainWindow.xaml.cs`
+- `tests/Linework.Tests/TaskServiceTests.cs`
+- `docs/PRODUCT_SPEC.md`
+- `docs/ARCHITECTURE.md`
+- `docs/IMPLEMENTATION_PLAN.md`
+- `docs/DECISIONS.md`
+- `dev-docs/DEV_DIARY.md`
+
+### Verification Results
+
+Post-change verification:
+
+```powershell
+dotnet build
+dotnet test
+```
+
+- build succeeded with 0 warnings and 0 errors
+- tests passed: 15 passed, 0 failed, 0 skipped
+
+Final requested verification was run after the docs update:
+
+```powershell
+dotnet restore
+dotnet build
+dotnet test
+```
+
+- restore succeeded
+- build succeeded with 0 warnings and 0 errors
+- tests passed: 15 passed, 0 failed, 0 skipped
+
+The requested stale-name variants were searched. The first pass only matched this diary because it listed the literal search terms, so the diary wording was changed to avoid creating a false positive. The final stale-name search found no matches.
+
+### Manual Smoke Test Results
+
+The user manually ran the app and checked the current vertical slice.
+
+Observed results:
+
+- Today quick-add worked as expected.
+- Active showed the task originally created from Today.
+- Active quick-add created a task that appeared in Active.
+- The task created from Active did not appear in Today. This is expected for the current implementation because Active quick-add creates an unplanned task and there is not yet a "Plan today" action.
+- The Active-created row only shows `Active` under the title. This is accurate but not very explanatory; clearer metadata such as `Unplanned` or a future `Plan today` action would improve the mental model.
+- Marking a visible task done added a strikethrough and dimmed the row.
+- The completed task appeared in Done.
+- After restarting the app, the completed task was still in Done.
+- Navigation produced no crashes.
+
+Conclusion: the current minimal persisted task loop is behaving as designed. The main UX gap found by manual testing is the lack of a way to move an existing Active/unplanned task onto Today.
+
+### Known Risks
+
+The UI has now had a basic manual smoke pass, but not a broad interaction pass. Focus behavior, keyboard flow, error surfaces, and longer lists still need more real use.
+
+`MainViewModel` is now doing the first task-list orchestration. That is acceptable for this small slice, but as details editing grows, it may be worth extracting row/detail ViewModels rather than bloating the main shell.
+
+`EnsureCreated` is still in use. This remains acceptable during early foundation work but must change before real user data is at risk.
+
+No dedicated session doc was added for this work. The dev diary is enough for this size of handoff; source-of-truth docs already capture the product and architecture changes.
+
+### Recommended Next Prompt
+
+```text
+Continue Linework Phase 3. First run dotnet restore, dotnet build, dotnet test, and stale-name searches. Then improve the minimal task UI without broad polish: add a small "Plan today" action or task details affordance for unplanned Active tasks, add selection/details for task title and notes, support reopen/archive through the service, and keep tests focused on service behavior. Do not add AI, sync, recurring tasks, notifications, search/FTS, or markdown preview yet.
+```
+
+---
+
 ## 2026-04-28 - Phase 2 Database Hardening Start
 
 ### Starting Point

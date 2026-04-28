@@ -19,3 +19,11 @@ Linework will keep `EnsureCreated` during the early foundation/database-hardenin
 ## 2026-04-28: Seed First-Run Settings Defaults
 
 Database initialization seeds system theme mode, Today as the default view, and a one-day done grace period if those settings do not already exist.
+
+## 2026-04-28: Consume Done Grace Period Through Settings
+
+`TaskService` reads `tasks.doneGracePeriodDays` when querying Active tasks. If the setting is absent, it falls back to one day so service tests and older databases keep the product default.
+
+## 2026-04-28: Start UI With A Minimal Persisted Task Loop
+
+The first real UI slice stays inside the existing WPF shell: quick-add, persisted Today/Active/Done rows, and mark-done. Full editing, details behavior, archive/reopen UI, markdown preview, search, and polish remain deferred.

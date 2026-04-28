@@ -14,7 +14,7 @@ public sealed class TaskServiceTests
         await using var factory = new TestDbFactory();
         await using var dbContext = await factory.CreateAsync(ct);
         var clock = new FixedClock(new DateTimeOffset(2026, 4, 27, 12, 0, 0, TimeSpan.Zero));
-        var service = new TaskService(dbContext, clock);
+        var service = CreateService(dbContext, clock);
 
         var task = await service.CreateTaskAsync(new CreateTaskRequest("Draft phase 1"), ct);
 
@@ -30,7 +30,7 @@ public sealed class TaskServiceTests
         await using var factory = new TestDbFactory();
         await using var dbContext = await factory.CreateAsync(ct);
         var clock = new FixedClock(new DateTimeOffset(2026, 4, 27, 12, 0, 0, TimeSpan.Zero));
-        var service = new TaskService(dbContext, clock);
+        var service = CreateService(dbContext, clock);
         var task = await service.CreateTaskAsync(new CreateTaskRequest("Finish foundation"), ct);
 
         clock.Now = clock.Now.AddHours(1);
@@ -49,7 +49,7 @@ public sealed class TaskServiceTests
         await using var factory = new TestDbFactory();
         await using var dbContext = await factory.CreateAsync(ct);
         var clock = new FixedClock(new DateTimeOffset(2026, 4, 27, 12, 0, 0, TimeSpan.Zero));
-        var service = new TaskService(dbContext, clock);
+        var service = CreateService(dbContext, clock);
         var task = await service.CreateTaskAsync(new CreateTaskRequest("Review task flow"), ct);
 
         await service.MarkDoneAsync(task.Id, ct);
@@ -68,7 +68,7 @@ public sealed class TaskServiceTests
         await using var factory = new TestDbFactory();
         await using var dbContext = await factory.CreateAsync(ct);
         var clock = new FixedClock(new DateTimeOffset(2026, 4, 27, 12, 0, 0, TimeSpan.Zero));
-        var service = new TaskService(dbContext, clock);
+        var service = CreateService(dbContext, clock);
         var task = await service.CreateTaskAsync(new CreateTaskRequest("Archive instead of delete"), ct);
 
         await service.ArchiveAsync(task.Id, ct);
@@ -84,7 +84,7 @@ public sealed class TaskServiceTests
         await using var factory = new TestDbFactory();
         await using var dbContext = await factory.CreateAsync(ct);
         var clock = new FixedClock(new DateTimeOffset(2026, 4, 27, 12, 0, 0, TimeSpan.Zero));
-        var service = new TaskService(dbContext, clock);
+        var service = CreateService(dbContext, clock);
         var task = await service.CreateTaskAsync(new CreateTaskRequest("Done but still visible"), ct);
 
         await service.MarkDoneAsync(task.Id, ct);
@@ -99,10 +99,32 @@ public sealed class TaskServiceTests
         await using var factory = new TestDbFactory();
         await using var dbContext = await factory.CreateAsync(ct);
         var clock = new FixedClock(new DateTimeOffset(2026, 4, 27, 12, 0, 0, TimeSpan.Zero));
-        var service = new TaskService(dbContext, clock);
+        var service = CreateService(dbContext, clock);
         var task = await service.CreateTaskAsync(new CreateTaskRequest("Completed yesterday"), ct);
 
         await service.MarkDoneAsync(task.Id, ct);
+        clock.Now = clock.Now.AddDays(2);
+
+        Assert.DoesNotContain(await service.GetActiveTasksAsync(ct), item => item.Id == task.Id);
+    }
+
+    [Fact]
+    public async Task Active_query_uses_configured_done_grace_period()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var factory = new TestDbFactory();
+        await using var dbContext = await factory.CreateAsync(ct);
+        var clock = new FixedClock(new DateTimeOffset(2026, 4, 27, 12, 0, 0, TimeSpan.Zero));
+        var settings = new SettingsService(dbContext);
+        var service = new TaskService(dbContext, clock, settings);
+        await settings.SetAsync(SettingKeys.DoneGracePeriodDays, 3, ct);
+        var task = await service.CreateTaskAsync(new CreateTaskRequest("Visible for configured grace"), ct);
+
+        await service.MarkDoneAsync(task.Id, ct);
+        clock.Now = clock.Now.AddDays(2);
+
+        Assert.Contains(await service.GetActiveTasksAsync(ct), item => item.Id == task.Id);
+
         clock.Now = clock.Now.AddDays(2);
 
         Assert.DoesNotContain(await service.GetActiveTasksAsync(ct), item => item.Id == task.Id);
@@ -115,7 +137,7 @@ public sealed class TaskServiceTests
         await using var factory = new TestDbFactory();
         await using var dbContext = await factory.CreateAsync(ct);
         var clock = new FixedClock(new DateTimeOffset(2026, 4, 27, 12, 0, 0, TimeSpan.Zero));
-        var service = new TaskService(dbContext, clock);
+        var service = CreateService(dbContext, clock);
         var active = await service.CreateTaskAsync(new CreateTaskRequest("Still active"), ct);
         var done = await service.CreateTaskAsync(new CreateTaskRequest("Finished"), ct);
         var archived = await service.CreateTaskAsync(new CreateTaskRequest("Archived after done"), ct);
@@ -138,7 +160,7 @@ public sealed class TaskServiceTests
         await using var factory = new TestDbFactory();
         await using var dbContext = await factory.CreateAsync(ct);
         var clock = new FixedClock(new DateTimeOffset(2026, 4, 20, 12, 0, 0, TimeSpan.Zero));
-        var service = new TaskService(dbContext, clock);
+        var service = CreateService(dbContext, clock);
         var oldTask = await service.CreateTaskAsync(new CreateTaskRequest("Old finish"), ct);
         await service.MarkDoneAsync(oldTask.Id, ct);
 
@@ -152,5 +174,10 @@ public sealed class TaskServiceTests
 
         Assert.Contains(results, item => item.Id == recentTask.Id);
         Assert.DoesNotContain(results, item => item.Id == oldTask.Id);
+    }
+
+    private static TaskService CreateService(Linework.Data.LineworkDbContext dbContext, FixedClock clock)
+    {
+        return new TaskService(dbContext, clock, new SettingsService(dbContext));
     }
 }

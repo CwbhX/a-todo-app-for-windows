@@ -6,6 +6,7 @@
         Height="720"
         MinWidth="900"
         MinHeight="560"
+        Loaded="Window_Loaded"
         Background="{StaticResource AppBackgroundBrush}">
     <Grid>
         <Grid.ColumnDefinitions>
@@ -48,10 +49,83 @@
             </StackPanel>
 
             <Border Grid.Row="1" Background="{StaticResource PanelBackgroundBrush}" BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="8" Padding="20">
-                <StackPanel>
-                    <TextBlock Text="Phase 1 shell" FontSize="18" FontWeight="SemiBold" />
-                    <TextBlock Text="Task lists, quick add, details editing, and persistence-backed UI arrive in the next phases." Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap" Margin="0,8,0,0" />
-                </StackPanel>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <DockPanel Margin="0,0,0,16">
+                        <DockPanel.Style>
+                            <Style TargetType="DockPanel">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ShowsQuickAdd}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </DockPanel.Style>
+                        <Button DockPanel.Dock="Right"
+                                Content="Add"
+                                Command="{Binding AddTaskCommand}"
+                                IsDefault="True"
+                                MinWidth="84"
+                                Padding="14,8"
+                                Margin="10,0,0,0" />
+                        <TextBox Text="{Binding QuickAddTitle, UpdateSourceTrigger=PropertyChanged}"
+                                 Padding="10,8"
+                                 VerticalContentAlignment="Center"
+                                 FontSize="14" />
+                    </DockPanel>
+
+                    <TextBlock Grid.Row="1"
+                               Text="{Binding TaskListMessage}"
+                               Foreground="{StaticResource MutedTextBrush}"
+                               TextWrapping="Wrap"
+                               Margin="0,0,0,12" />
+
+                    <ItemsControl Grid.Row="2" ItemsSource="{Binding Tasks}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="#FAFAFA" BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,0,0,8">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Title}" FontSize="15" FontWeight="SemiBold">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsDone}" Value="True">
+                                                                <Setter Property="TextDecorations" Value="Strikethrough" />
+                                                                <Setter Property="Foreground" Value="{StaticResource MutedTextBrush}" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                            <TextBlock Text="{Binding MetaText}" Foreground="{StaticResource MutedTextBrush}" Margin="0,4,0,0" />
+                                        </StackPanel>
+
+                                        <Button Grid.Column="1"
+                                                Content="Done"
+                                                Command="{Binding DataContext.MarkDoneCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                CommandParameter="{Binding}"
+                                                IsEnabled="{Binding CanMarkDone}"
+                                                Padding="12,6"
+                                                Margin="16,0,0,0"
+                                                VerticalAlignment="Center" />
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </Grid>
             </Border>
         </Grid>
 
