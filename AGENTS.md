@@ -38,6 +38,7 @@ If this file conflicts with a more specific user prompt, follow the user prompt 
 
 - `skills/linework-smoke-test`: use when the user asks for a Linework smoke test, smokescreen test, manual app test script, or wants to report app behavior as good/not good/details.
 - `skills/linework-pr-copy`: use when the user asks for a GitHub PR title/body, pull request description, or copy/paste-ready PR text for Linework changes.
+- `skills/linework-next-session-prompt`: use when the user asks for a next-session prompt, handoff prompt, continuation prompt, or next-agent prompt for Linework.
 
 ---
 
