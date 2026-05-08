@@ -2,6 +2,7 @@ using Linework.Data;
 using Linework.Models;
 using Linework.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
 namespace Linework.Tests;
@@ -24,7 +25,7 @@ public sealed class DbInitializerTests
 
             await using (var dbContext = new LineworkDbContext(options))
             {
-                var initializer = new DbInitializer(dbContext);
+                var initializer = new DbInitializer(dbContext, NullLogger<DbInitializer>.Instance);
                 await initializer.InitializeAsync(ct);
 
                 var settings = new SettingsService(dbContext);

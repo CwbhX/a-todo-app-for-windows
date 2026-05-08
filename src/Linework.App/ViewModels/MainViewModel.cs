@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using Linework.Infrastructure;
 using Linework.Models;
 using Linework.Services;
+using Microsoft.Extensions.Logging;
 using System.Collections.ObjectModel;
 using System.Globalization;
 
@@ -25,7 +26,7 @@ public sealed record TaskDetailsDisplayViewModel(
     string CompletedDateText,
     string ProjectNameText);
 
-public partial class MainViewModel(ITaskService taskService, IClock clock) : ObservableObject
+public partial class MainViewModel(ITaskService taskService, IClock clock, ILogger<MainViewModel> logger) : ObservableObject
 {
     private Guid? taskIdToSelectAfterRefresh;
     private string loadedTaskTitle = string.Empty;
@@ -92,12 +93,14 @@ public partial class MainViewModel(ITaskService taskService, IClock clock) : Obs
     [RelayCommand]
     private async Task LoadAsync()
     {
+        logger.LogDebug("Loading main view model.");
         await RefreshTasksAsync();
     }
 
     [RelayCommand]
     private async Task SelectView(string viewName)
     {
+        logger.LogDebug("Selecting view {ViewName}.", viewName);
         SelectedViewName = viewName;
         OnPropertyChanged(nameof(SelectedViewDescription));
         OnPropertyChanged(nameof(ShowsTaskList));
@@ -118,6 +121,11 @@ public partial class MainViewModel(ITaskService taskService, IClock clock) : Obs
         {
             var plannedForDate = SelectedViewName == "Today" ? clock.Today : (DateOnly?)null;
             var task = await taskService.CreateTaskAsync(new CreateTaskRequest(title, PlannedForDate: plannedForDate));
+            logger.LogDebug(
+                "Added task {TaskId} from {ViewName} with title '{TaskTitle}'.",
+                task.Id,
+                SelectedViewName,
+                task.Title);
             QuickAddTitle = string.Empty;
             taskIdToSelectAfterRefresh = task.Id;
             await RefreshTasksAsync();
@@ -135,6 +143,7 @@ public partial class MainViewModel(ITaskService taskService, IClock clock) : Obs
         await RunTaskListActionAsync(async () =>
         {
             await taskService.PlanForTodayAsync(task.Id);
+            logger.LogDebug("Plan today action completed for task {TaskId}.", task.Id);
             await RefreshTasksAsync();
         });
     }
@@ -150,6 +159,7 @@ public partial class MainViewModel(ITaskService taskService, IClock clock) : Obs
         await RunTaskListActionAsync(async () =>
         {
             await taskService.MarkDoneAsync(task.Id);
+            logger.LogDebug("Mark done action completed for task {TaskId}.", task.Id);
             await RefreshTasksAsync();
         });
     }
@@ -169,6 +179,7 @@ public partial class MainViewModel(ITaskService taskService, IClock clock) : Obs
         {
             TaskDetailsStatusMessage = string.Empty;
             await taskService.UpdateTaskDetailsAsync(taskId.Value, new UpdateTaskDetailsRequest(EditableTaskTitle, EditableTaskNotes));
+            logger.LogDebug("Saved task details for task {TaskId}.", taskId.Value);
             taskIdToSelectAfterRefresh = taskId.Value;
             await RefreshTasksAsync();
 
@@ -181,6 +192,7 @@ public partial class MainViewModel(ITaskService taskService, IClock clock) : Obs
         }
         catch (Exception ex)
         {
+            logger.LogError(ex, "Saving task details failed for task {TaskId}.", taskId);
             TaskDetailsStatusMessage = ex.Message;
         }
         finally
@@ -207,6 +219,7 @@ public partial class MainViewModel(ITaskService taskService, IClock clock) : Obs
         var selectedTask = await taskService.GetTaskAsync(task.Id);
         if (selectedTask is null)
         {
+            logger.LogWarning("Selected task {TaskId} was not found.", task.Id);
             SelectedTaskDetails = null;
             TaskDetailsMessage = "Task was not found.";
             TaskDetailsStatusMessage = string.Empty;
@@ -217,6 +230,7 @@ public partial class MainViewModel(ITaskService taskService, IClock clock) : Obs
             return;
         }
 
+        logger.LogDebug("Selected task {TaskId}.", selectedTask.Id);
         SelectedTaskDetails = ToDetails(selectedTask);
         loadedTaskTitle = selectedTask.Title;
         loadedTaskNotes = selectedTask.MarkdownNotes ?? string.Empty;
@@ -275,6 +289,7 @@ public partial class MainViewModel(ITaskService taskService, IClock clock) : Obs
                 : Tasks.FirstOrDefault(task => task.Id == selectedTaskId.Value);
 
             TaskListMessage = Tasks.Count == 0 ? EmptyMessageForSelectedView() : string.Empty;
+            logger.LogDebug("Refreshed {ViewName} task list with {TaskCount} tasks.", SelectedViewName, Tasks.Count);
         }
         finally
         {
@@ -292,6 +307,7 @@ public partial class MainViewModel(ITaskService taskService, IClock clock) : Obs
         }
         catch (Exception ex)
         {
+            logger.LogError(ex, "Task list action failed in {ViewName}.", SelectedViewName);
             TaskListMessage = ex.Message;
         }
     }

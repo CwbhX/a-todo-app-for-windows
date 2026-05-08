@@ -1,6 +1,7 @@
 using Linework.Models;
 using Linework.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
 namespace Linework.Tests;
@@ -116,7 +117,7 @@ public sealed class TaskServiceTests
         await using var dbContext = await factory.CreateAsync(ct);
         var clock = new FixedClock(new DateTimeOffset(2026, 4, 27, 12, 0, 0, TimeSpan.Zero));
         var settings = new SettingsService(dbContext);
-        var service = new TaskService(dbContext, clock, settings);
+        var service = new TaskService(dbContext, clock, settings, NullLogger<TaskService>.Instance);
         await settings.SetAsync(SettingKeys.DoneGracePeriodDays, 3, ct);
         var task = await service.CreateTaskAsync(new CreateTaskRequest("Visible for configured grace"), ct);
 
@@ -216,6 +217,6 @@ public sealed class TaskServiceTests
 
     private static TaskService CreateService(Linework.Data.LineworkDbContext dbContext, FixedClock clock)
     {
-        return new TaskService(dbContext, clock, new SettingsService(dbContext));
+        return new TaskService(dbContext, clock, new SettingsService(dbContext), NullLogger<TaskService>.Instance);
     }
 }

@@ -22,6 +22,15 @@ dotnet test
 dotnet run --project src/Linework.App
 ```
 
+To capture debug logs for a local run:
+
+```powershell
+dotnet run --project src/Linework.App -- --debug-log
+dotnet run --project src/Linework.App -- --debug-log --debug-log-file smoke-debug.log
+```
+
+Bare debug log file names are written under `%LOCALAPPDATA%\Linework\logs`. Rooted paths are accepted when you want the log somewhere specific.
+
 Linework stores local data under:
 
 ```text

@@ -2,6 +2,7 @@ using Linework.Models;
 using Linework.Services;
 using Linework.ViewModels;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
 namespace Linework.Tests;
@@ -15,7 +16,7 @@ public sealed class MainViewModelTests
         await using var factory = new TestDbFactory();
         await using var dbContext = await factory.CreateAsync(ct);
         var clock = new FixedClock(new DateTimeOffset(2026, 4, 27, 12, 0, 0, TimeSpan.Zero));
-        var service = new TaskService(dbContext, clock, new SettingsService(dbContext));
+        var service = new TaskService(dbContext, clock, new SettingsService(dbContext), NullLogger<TaskService>.Instance);
         var project = new Project
         {
             Id = Guid.NewGuid(),
@@ -32,7 +33,7 @@ public sealed class MainViewModelTests
                 PlannedForDate: clock.Today,
                 DueAt: clock.Now.AddHours(2)),
             ct);
-        var viewModel = new MainViewModel(service, clock);
+        var viewModel = new MainViewModel(service, clock, NullLogger<MainViewModel>.Instance);
 
         await viewModel.LoadCommand.ExecuteAsync(null);
         var row = Assert.Single(viewModel.Tasks);
@@ -57,11 +58,11 @@ public sealed class MainViewModelTests
         await using var factory = new TestDbFactory();
         await using var dbContext = await factory.CreateAsync(ct);
         var clock = new FixedClock(new DateTimeOffset(2026, 4, 27, 12, 0, 0, TimeSpan.Zero));
-        var service = new TaskService(dbContext, clock, new SettingsService(dbContext));
+        var service = new TaskService(dbContext, clock, new SettingsService(dbContext), NullLogger<TaskService>.Instance);
         var task = await service.CreateTaskAsync(
             new CreateTaskRequest("Original title", MarkdownNotes: "Original notes", PlannedForDate: clock.Today),
             ct);
-        var viewModel = new MainViewModel(service, clock);
+        var viewModel = new MainViewModel(service, clock, NullLogger<MainViewModel>.Instance);
 
         await viewModel.LoadCommand.ExecuteAsync(null);
         var row = Assert.Single(viewModel.Tasks);

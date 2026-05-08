@@ -5,6 +5,7 @@ using Linework.ViewModels;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace Linework.App;
 
@@ -17,8 +18,19 @@ public partial class App
         base.OnStartup(e);
 
         AppPaths.EnsureDirectories();
+        var debugLogOptions = DebugLogOptions.Parse(e.Args);
 
-        _host = Host.CreateDefaultBuilder()
+        _host = Host.CreateDefaultBuilder(e.Args)
+            .ConfigureLogging(logging =>
+            {
+                if (debugLogOptions.IsEnabled)
+                {
+                    logging.AddProvider(new DebugFileLoggerProvider(
+                        debugLogOptions.FilePath,
+                        LogLevel.Debug,
+                        ["Microsoft.EntityFrameworkCore.Database.Command"]));
+                }
+            })
             .ConfigureServices(services =>
             {
                 services.AddSingleton<IClock, SystemClock>();
@@ -40,20 +52,39 @@ public partial class App
             })
             .Build();
 
+        var logger = _host.Services.GetRequiredService<ILogger<App>>();
+        logger.LogInformation("Linework startup began.");
+        if (debugLogOptions.IsEnabled)
+        {
+            logger.LogInformation("Debug file logging enabled at {FilePath}.", debugLogOptions.FilePath);
+        }
+
         await _host.StartAsync();
 
         using (var scope = _host.Services.CreateScope())
         {
-            await scope.ServiceProvider.GetRequiredService<DbInitializer>().InitializeAsync();
+            try
+            {
+                logger.LogDebug("Database initialization began.");
+                await scope.ServiceProvider.GetRequiredService<DbInitializer>().InitializeAsync();
+                logger.LogDebug("Database initialization completed.");
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Database initialization failed.");
+                throw;
+            }
         }
 
         _host.Services.GetRequiredService<MainWindow>().Show();
+        logger.LogInformation("Main window shown.");
     }
 
     protected override async void OnExit(System.Windows.ExitEventArgs e)
     {
         if (_host is not null)
         {
+            _host.Services.GetRequiredService<ILogger<App>>().LogInformation("Linework shutdown began.");
             await _host.StopAsync();
             _host.Dispose();
         }

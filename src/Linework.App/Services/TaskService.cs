@@ -2,6 +2,7 @@ using Linework.Data;
 using Linework.Infrastructure;
 using Linework.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Linework.Services;
 
@@ -34,7 +35,11 @@ public interface ITaskService
     Task ArchiveAsync(Guid taskId, CancellationToken ct = default);
 }
 
-public sealed class TaskService(LineworkDbContext dbContext, IClock clock, ISettingsService settingsService) : ITaskService
+public sealed class TaskService(
+    LineworkDbContext dbContext,
+    IClock clock,
+    ISettingsService settingsService,
+    ILogger<TaskService> logger) : ITaskService
 {
     private const int DefaultDoneGracePeriodDays = 1;
 
@@ -63,6 +68,11 @@ public sealed class TaskService(LineworkDbContext dbContext, IClock clock, ISett
         dbContext.TaskItems.Add(task);
         AddEvent(task.Id, TaskEventType.Created, now);
         await dbContext.SaveChangesAsync(ct);
+        logger.LogDebug(
+            "Created task {TaskId} with title '{TaskTitle}' planned for {PlannedForDate}.",
+            task.Id,
+            task.Title,
+            task.PlannedForDate);
         return task;
     }
 
@@ -163,6 +173,7 @@ public sealed class TaskService(LineworkDbContext dbContext, IClock clock, ISett
         AddEvent(task.Id, TaskEventType.Edited, now);
 
         await dbContext.SaveChangesAsync(ct);
+        logger.LogDebug("Updated task details for {TaskId} with title '{TaskTitle}'.", task.Id, task.Title);
     }
 
     public async Task PlanForTodayAsync(Guid taskId, CancellationToken ct = default)
@@ -175,6 +186,7 @@ public sealed class TaskService(LineworkDbContext dbContext, IClock clock, ISett
         AddEvent(task.Id, TaskEventType.PlannedForDateChanged, now);
 
         await dbContext.SaveChangesAsync(ct);
+        logger.LogDebug("Planned task {TaskId} for today ({PlannedForDate}).", task.Id, task.PlannedForDate);
     }
 
     public async Task MarkDoneAsync(Guid taskId, CancellationToken ct = default)
@@ -189,6 +201,7 @@ public sealed class TaskService(LineworkDbContext dbContext, IClock clock, ISett
         AddEvent(task.Id, TaskEventType.MarkedDone, now);
 
         await dbContext.SaveChangesAsync(ct);
+        logger.LogDebug("Marked task {TaskId} done at {CompletedAt}.", task.Id, task.CompletedAt);
     }
 
     public async Task ReopenAsync(Guid taskId, CancellationToken ct = default)
@@ -203,6 +216,7 @@ public sealed class TaskService(LineworkDbContext dbContext, IClock clock, ISett
         AddEvent(task.Id, TaskEventType.Reopened, now);
 
         await dbContext.SaveChangesAsync(ct);
+        logger.LogDebug("Reopened task {TaskId}.", task.Id);
     }
 
     public async Task ArchiveAsync(Guid taskId, CancellationToken ct = default)
@@ -216,6 +230,7 @@ public sealed class TaskService(LineworkDbContext dbContext, IClock clock, ISett
         AddEvent(task.Id, TaskEventType.Archived, now);
 
         await dbContext.SaveChangesAsync(ct);
+        logger.LogDebug("Archived task {TaskId} at {ArchivedAt}.", task.Id, task.ArchivedAt);
     }
 
     private async Task<TaskItem> FindTaskForUpdateAsync(Guid taskId, CancellationToken ct)
