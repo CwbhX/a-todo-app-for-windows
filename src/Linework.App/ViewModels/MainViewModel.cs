@@ -4,6 +4,7 @@ using Linework.Infrastructure;
 using Linework.Models;
 using Linework.Services;
 using System.Collections.ObjectModel;
+using System.Globalization;
 
 namespace Linework.ViewModels;
 
@@ -15,8 +16,21 @@ public sealed record TaskRowViewModel(Guid Id, string Title, TaskItemStatus Stat
     public bool CanPlanToday => Status == TaskItemStatus.Active && PlannedForDate is null;
 }
 
+public sealed record TaskDetailsDisplayViewModel(
+    Guid Id,
+    string Title,
+    string StatusText,
+    string PlannedDateText,
+    string DueDateText,
+    string CompletedDateText,
+    string ProjectNameText);
+
 public partial class MainViewModel(ITaskService taskService, IClock clock) : ObservableObject
 {
+    private Guid? taskIdToSelectAfterRefresh;
+    private string loadedTaskTitle = string.Empty;
+    private string loadedTaskNotes = string.Empty;
+
     public IReadOnlyList<NavigationItemViewModel> NavigationItems { get; } =
     [
         new("Today", "Planned work and today's completions."),
@@ -40,6 +54,31 @@ public partial class MainViewModel(ITaskService taskService, IClock clock) : Obs
     [ObservableProperty]
     private string taskListMessage = "Loading tasks...";
 
+    [ObservableProperty]
+    private TaskRowViewModel? selectedTaskRow;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasSelectedTask))]
+    private TaskDetailsDisplayViewModel? selectedTaskDetails;
+
+    [ObservableProperty]
+    private string taskDetailsMessage = "No task selected";
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(SaveTaskDetailsCommand))]
+    private string editableTaskTitle = string.Empty;
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(SaveTaskDetailsCommand))]
+    private string editableTaskNotes = string.Empty;
+
+    [ObservableProperty]
+    private string taskDetailsStatusMessage = string.Empty;
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(SaveTaskDetailsCommand))]
+    private bool isSavingTaskDetails;
+
     public ObservableCollection<TaskRowViewModel> Tasks { get; } = [];
 
     public string SelectedViewDescription =>
@@ -48,6 +87,7 @@ public partial class MainViewModel(ITaskService taskService, IClock clock) : Obs
 
     public bool ShowsTaskList => SelectedViewName is "Today" or "Active" or "Done";
     public bool ShowsQuickAdd => SelectedViewName is "Today" or "Active";
+    public bool HasSelectedTask => SelectedTaskDetails is not null;
 
     [RelayCommand]
     private async Task LoadAsync()
@@ -77,8 +117,9 @@ public partial class MainViewModel(ITaskService taskService, IClock clock) : Obs
         await RunTaskListActionAsync(async () =>
         {
             var plannedForDate = SelectedViewName == "Today" ? clock.Today : (DateOnly?)null;
-            await taskService.CreateTaskAsync(new CreateTaskRequest(title, PlannedForDate: plannedForDate));
+            var task = await taskService.CreateTaskAsync(new CreateTaskRequest(title, PlannedForDate: plannedForDate));
             QuickAddTitle = string.Empty;
+            taskIdToSelectAfterRefresh = task.Id;
             await RefreshTasksAsync();
         });
     }
@@ -113,9 +154,103 @@ public partial class MainViewModel(ITaskService taskService, IClock clock) : Obs
         });
     }
 
+    [RelayCommand(CanExecute = nameof(CanSaveTaskDetails))]
+    private async Task SaveTaskDetailsAsync()
+    {
+        var taskId = SelectedTaskDetails?.Id;
+        if (taskId is null)
+        {
+            return;
+        }
+
+        IsSavingTaskDetails = true;
+
+        try
+        {
+            TaskDetailsStatusMessage = string.Empty;
+            await taskService.UpdateTaskDetailsAsync(taskId.Value, new UpdateTaskDetailsRequest(EditableTaskTitle, EditableTaskNotes));
+            taskIdToSelectAfterRefresh = taskId.Value;
+            await RefreshTasksAsync();
+
+            if (SelectedTaskRow is not null)
+            {
+                await SelectTaskAsync(SelectedTaskRow);
+            }
+
+            TaskDetailsStatusMessage = "Saved.";
+        }
+        catch (Exception ex)
+        {
+            TaskDetailsStatusMessage = ex.Message;
+        }
+        finally
+        {
+            IsSavingTaskDetails = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task SelectTaskAsync(TaskRowViewModel? task)
+    {
+        if (task is null)
+        {
+            SelectedTaskDetails = null;
+            TaskDetailsMessage = "No task selected";
+            TaskDetailsStatusMessage = string.Empty;
+            loadedTaskTitle = string.Empty;
+            loadedTaskNotes = string.Empty;
+            EditableTaskTitle = string.Empty;
+            EditableTaskNotes = string.Empty;
+            return;
+        }
+
+        var selectedTask = await taskService.GetTaskAsync(task.Id);
+        if (selectedTask is null)
+        {
+            SelectedTaskDetails = null;
+            TaskDetailsMessage = "Task was not found.";
+            TaskDetailsStatusMessage = string.Empty;
+            loadedTaskTitle = string.Empty;
+            loadedTaskNotes = string.Empty;
+            EditableTaskTitle = string.Empty;
+            EditableTaskNotes = string.Empty;
+            return;
+        }
+
+        SelectedTaskDetails = ToDetails(selectedTask);
+        loadedTaskTitle = selectedTask.Title;
+        loadedTaskNotes = selectedTask.MarkdownNotes ?? string.Empty;
+        EditableTaskTitle = loadedTaskTitle;
+        EditableTaskNotes = loadedTaskNotes;
+        TaskDetailsMessage = string.Empty;
+    }
+
+    partial void OnSelectedTaskRowChanged(TaskRowViewModel? value)
+    {
+        SelectTaskCommand.Execute(value);
+    }
+
     private bool CanAddTask()
     {
         return ShowsQuickAdd && !string.IsNullOrWhiteSpace(QuickAddTitle) && !IsBusy;
+    }
+
+    partial void OnEditableTaskTitleChanged(string value)
+    {
+        SaveTaskDetailsCommand.NotifyCanExecuteChanged();
+    }
+
+    partial void OnEditableTaskNotesChanged(string value)
+    {
+        SaveTaskDetailsCommand.NotifyCanExecuteChanged();
+    }
+
+    private bool CanSaveTaskDetails()
+    {
+        return SelectedTaskDetails is not null
+            && !IsSavingTaskDetails
+            && !string.IsNullOrWhiteSpace(EditableTaskTitle)
+            && (EditableTaskTitle != loadedTaskTitle || EditableTaskNotes != loadedTaskNotes);
     }
 
     private async Task RefreshTasksAsync()
@@ -125,6 +260,8 @@ public partial class MainViewModel(ITaskService taskService, IClock clock) : Obs
 
         try
         {
+            var selectedTaskId = taskIdToSelectAfterRefresh ?? SelectedTaskRow?.Id;
+            taskIdToSelectAfterRefresh = null;
             Tasks.Clear();
             var tasks = await LoadSelectedTasksAsync();
 
@@ -132,6 +269,10 @@ public partial class MainViewModel(ITaskService taskService, IClock clock) : Obs
             {
                 Tasks.Add(ToRow(task));
             }
+
+            SelectedTaskRow = selectedTaskId is null
+                ? null
+                : Tasks.FirstOrDefault(task => task.Id == selectedTaskId.Value);
 
             TaskListMessage = Tasks.Count == 0 ? EmptyMessageForSelectedView() : string.Empty;
         }
@@ -180,6 +321,27 @@ public partial class MainViewModel(ITaskService taskService, IClock clock) : Obs
         return new TaskRowViewModel(task.Id, task.Title, task.Status, task.PlannedForDate, metaText);
     }
 
+    private static TaskDetailsDisplayViewModel ToDetails(TaskItem task)
+    {
+        return new TaskDetailsDisplayViewModel(
+            task.Id,
+            task.Title,
+            task.Status.ToString(),
+            FormatDate(task.PlannedForDate),
+            FormatDateTime(task.DueAt),
+            FormatDateTime(task.CompletedAt),
+            task.Project?.Name ?? "None");
+    }
+
+    private static string FormatDate(DateOnly? date)
+    {
+        return date?.ToString("MMM d, yyyy", CultureInfo.InvariantCulture) ?? "None";
+    }
+
+    private static string FormatDateTime(DateTimeOffset? dateTime)
+    {
+        return dateTime?.ToLocalTime().ToString("MMM d, yyyy h:mm tt", CultureInfo.InvariantCulture) ?? "None";
+    }
     private string EmptyMessageForSelectedView()
     {
         return SelectedViewName switch

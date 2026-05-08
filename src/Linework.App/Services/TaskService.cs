@@ -14,6 +14,10 @@ public sealed record CreateTaskRequest(
     DateTimeOffset? DueAt = null,
     DateTimeOffset? ReminderAt = null);
 
+public sealed record UpdateTaskDetailsRequest(
+    string Title,
+    string? MarkdownNotes = null);
+
 public sealed record DoneQuery(DateTimeOffset? CompletedFrom = null, DateTimeOffset? CompletedTo = null);
 
 public interface ITaskService
@@ -23,6 +27,7 @@ public interface ITaskService
     Task<IReadOnlyList<TaskItem>> GetTodayTasksAsync(CancellationToken ct = default);
     Task<IReadOnlyList<TaskItem>> GetActiveTasksAsync(CancellationToken ct = default);
     Task<IReadOnlyList<TaskItem>> GetDoneTasksAsync(DoneQuery query, CancellationToken ct = default);
+    Task UpdateTaskDetailsAsync(Guid taskId, UpdateTaskDetailsRequest request, CancellationToken ct = default);
     Task PlanForTodayAsync(Guid taskId, CancellationToken ct = default);
     Task MarkDoneAsync(Guid taskId, CancellationToken ct = default);
     Task ReopenAsync(Guid taskId, CancellationToken ct = default);
@@ -131,6 +136,33 @@ public sealed class TaskService(LineworkDbContext dbContext, IClock clock, ISett
             .OrderByDescending(task => task.CompletedAt)
             .ThenBy(task => task.Title)
             .ToListAsync(ct);
+    }
+
+    public async Task UpdateTaskDetailsAsync(Guid taskId, UpdateTaskDetailsRequest request, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.Title))
+        {
+            throw new ArgumentException("Task title is required.", nameof(request));
+        }
+
+        var task = await FindTaskForUpdateAsync(taskId, ct);
+        var title = request.Title.Trim();
+        var markdownNotes = string.IsNullOrWhiteSpace(request.MarkdownNotes)
+            ? null
+            : request.MarkdownNotes.Trim();
+
+        if (task.Title == title && task.MarkdownNotes == markdownNotes)
+        {
+            return;
+        }
+
+        var now = clock.Now.ToUniversalTime();
+        task.Title = title;
+        task.MarkdownNotes = markdownNotes;
+        task.UpdatedAt = now;
+        AddEvent(task.Id, TaskEventType.Edited, now);
+
+        await dbContext.SaveChangesAsync(ct);
     }
 
     public async Task PlanForTodayAsync(Guid taskId, CancellationToken ct = default)

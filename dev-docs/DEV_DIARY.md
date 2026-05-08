@@ -15,6 +15,236 @@ Use this diary for session history and handoff context, not as a replacement for
 
 ---
 
+## 2026-04-28 - Minimal Task Details Editing
+
+### Starting Point
+
+The user asked to continue Phase 3 with the next smallest useful improvement to the existing right-side task details panel: editable title and notes with a simple persisted save flow.
+
+Read before coding:
+
+- `AGENTS.md`
+- `CODEX_STARTING_CONTEXT.md`
+- `dev-docs/DEV_DIARY.md`
+- `docs/PRODUCT_SPEC.md`
+- `docs/ARCHITECTURE.md`
+- `docs/IMPLEMENTATION_PLAN.md`
+- `docs/DECISIONS.md`
+
+Baseline verification before edits:
+
+```powershell
+dotnet restore
+dotnet build
+dotnet test
+# Run the repo stale-name sweep from the current handoff instructions.
+```
+
+Results:
+
+- restore succeeded
+- build succeeded with 0 warnings and 0 errors
+- tests passed: 17 passed, 0 failed, 0 skipped
+- the stale-name sweep found one match only: the repository folder path inside an older dev diary note
+
+### Changes
+
+Added a narrow `TaskService.UpdateTaskDetailsAsync` path for editing selected task title and notes.
+
+Behavior:
+
+- title is still required
+- notes save as `null` when left blank
+- `UpdatedAt` is refreshed on change
+- a `TaskEventType.Edited` event is recorded when title or notes actually change
+- no-op saves do not create redundant history
+
+Extended `MainViewModel` and `MainWindow` so the existing selected-task details panel now supports:
+
+- editable title field
+- editable notes field
+- Save button
+- simple save status text
+- reloading the selected task after save so the row title and details panel stay aligned
+
+Added focused tests:
+
+- `TaskService` test proving title/notes edits persist and record an `Edited` event
+- `MainViewModel` test proving a save updates the selected row, persisted task, and current editable state
+
+Updated:
+
+- `src/Linework.App/Services/TaskService.cs`
+- `src/Linework.App/ViewModels/MainViewModel.cs`
+- `src/Linework.App/MainWindow.xaml`
+- `tests/Linework.Tests/TaskServiceTests.cs`
+- `tests/Linework.Tests/MainViewModelTests.cs`
+- `docs/PRODUCT_SPEC.md`
+- `docs/ARCHITECTURE.md`
+- `docs/IMPLEMENTATION_PLAN.md`
+- `docs/DECISIONS.md`
+- `skills/linework-smoke-test/SKILL.md`
+- `plugins/linework/skills/linework-smoke-test/SKILL.md`
+
+### Verification Results
+
+During the first post-edit verification pass, `dotnet build` and `dotnet test` were blocked by a running `Linework.App` process holding the app binary open. That was not a code issue. After stopping the running app, verification passed cleanly.
+
+Final verification after code and doc updates:
+
+```powershell
+dotnet restore
+dotnet build
+dotnet test
+# Run the repo stale-name sweep from the current handoff instructions.
+```
+
+Results:
+
+- restore succeeded
+- build succeeded with 0 warnings and 0 errors
+- tests passed: 19 passed, 0 failed, 0 skipped
+- the final stale-name sweep still found only the repository folder path in an old diary note
+
+### Known Risks
+
+The details panel now has the first edit flow, but it is still intentionally small. There is no reopen/archive UI, important toggle, project picker, or date editing yet.
+
+Save enablement is intentionally simple: it turns on when title or notes differ from the last loaded persisted values. There is no richer dirty indicator, optimistic UI, or concurrent edit handling yet.
+
+Notes are still plain editable text. Markdown preview/rendering remains deferred.
+
+### Recommended Next Prompt
+
+```text
+Continue Linework Phase 3. First read the standard repo context docs and run dotnet restore, dotnet build, dotnet test, plus the stale-name sweep from the repo handoff instructions. If anything is red, fix the smallest issue first.
+
+Next goal: keep building on the selected-task details panel with the next smallest useful action. Prefer reopen/archive UI for the selected task, or add a simple important/star toggle if that is smaller and fits naturally beside the new title/notes save flow. Keep WPF changes minimal and MVVM-shaped.
+
+Do not add AI summaries, sync, recurring tasks, system tray, OS notifications, full search/FTS, full markdown preview, production visual polish, or a broad UI rewrite.
+
+After changes, rerun restore/build/test and the stale-name sweep, update dev-docs/DEV_DIARY.md with what changed and verification results, and use skills/linework-smoke-test if producing manual smoke steps.
+```
+
+---
+
+## 2026-04-28 - Read-Only Task Details Selection
+
+### Starting Point
+
+The user asked to continue Phase 3 by adding the next smallest useful task-flow improvement: selecting persisted task rows and showing useful read-only details in the existing right-side Task Details panel.
+
+Read before coding:
+
+- `AGENTS.md`
+- `CODEX_STARTING_CONTEXT.md`
+- `dev-docs/DEV_DIARY.md`
+- `docs/PRODUCT_SPEC.md`
+- `docs/ARCHITECTURE.md`
+- `docs/IMPLEMENTATION_PLAN.md`
+- `docs/DECISIONS.md`
+
+Baseline verification before edits:
+
+```powershell
+dotnet restore
+dotnet build
+dotnet test
+```
+
+Results:
+
+- restore succeeded
+- build succeeded with 0 warnings and 0 errors
+- tests passed: 16 passed, 0 failed, 0 skipped
+
+The initial broad legacy-name sweep found only expected historical/process wording. A narrower actual-name variant sweep found no content matches beyond the repository path in an old diary note.
+
+### Changes
+
+Added row selection to the existing persisted task list and wired it into `MainViewModel`.
+
+Selecting a task now loads the full persisted task through `TaskService.GetTaskAsync` and populates the right details panel with:
+
+- title
+- status
+- planned date
+- due date
+- completed date
+- project name, or `None`
+- compact notes preview when notes exist
+
+The task list now preserves the selected row across refreshes where possible, and newly quick-added tasks become selected after creation.
+
+Added a focused `MainViewModel` test proving that selecting a row loads read-only details, including project name and notes preview.
+
+Updated:
+
+- `src/Linework.App/ViewModels/MainViewModel.cs`
+- `src/Linework.App/MainWindow.xaml`
+- `tests/Linework.Tests/MainViewModelTests.cs`
+- `docs/PRODUCT_SPEC.md`
+- `docs/ARCHITECTURE.md`
+- `docs/IMPLEMENTATION_PLAN.md`
+- `docs/DECISIONS.md`
+- `skills/linework-smoke-test/SKILL.md`
+
+### Verification Results
+
+Final verification after code, docs, and skill updates:
+
+```powershell
+dotnet restore
+dotnet build
+dotnet test
+```
+
+Results:
+
+- restore succeeded
+- build succeeded with 0 warnings and 0 errors
+- tests passed: 17 passed, 0 failed, 0 skipped
+
+The project-local smoke-test skill was validated successfully:
+
+```powershell
+python "C:\Users\Clement Hathaway\.codex\skills\.system\skill-creator\scripts\quick_validate.py" skills\linework-smoke-test
+```
+
+The final actual-name variant sweep found no stale app-name content matches beyond the repository path in an old diary note.
+
+### Known Risks
+
+The details panel is intentionally read-only. There is still no title/notes editing UI, reopen/archive UI, project picker, date picker, or full markdown preview.
+
+Selection is loaded asynchronously from the ViewModel after WPF selection changes. This is enough for the current small UI, but richer editing may eventually want a dedicated task-detail ViewModel with explicit save/reload state.
+
+### Manual Smoke Result
+
+The user ran the manual smoke checks after the read-only task details change and reported:
+
+- Launch and navigation: good
+- Today quick-add: good
+- Active quick-add plus Plan today: good
+- Mark done: good
+- Task selection and details: seems good
+
+After that smoke pass, `skills/linework-smoke-test` and the repo-local plugin copy were updated so future smoke-test prompts default to targeted checks for the most recent change. The full smoke matrix remains available as a menu for explicit full regression passes or broad changes.
+
+### Recommended Next Prompt
+
+```text
+Continue Linework Phase 3. First read the standard repo context docs and run dotnet restore, dotnet build, dotnet test, plus the legacy app-name sweep from the repo handoff instructions. If anything is red, fix the smallest issue first.
+
+Next goal: build on the read-only task details panel with the next smallest useful editing/action step. Prefer simple title/notes editing for the selected task, or add reopen/archive UI for selected tasks if that is smaller. Keep WPF changes minimal and MVVM-shaped.
+
+Do not add AI summaries, sync, recurring tasks, system tray, OS notifications, full search/FTS, full markdown preview, production visual polish, or a broad UI rewrite.
+
+After changes, rerun restore/build/test and the legacy-name sweep, update dev-docs/DEV_DIARY.md with what changed and verification results, and use skills/linework-smoke-test if producing manual smoke steps.
+```
+
+---
+
 ## 2026-04-28 - Minimal Plan Today Action
 
 ### Starting Point

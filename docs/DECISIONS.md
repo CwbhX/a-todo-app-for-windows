@@ -31,3 +31,11 @@ The first real UI slice stays inside the existing WPF shell: quick-add, persiste
 ## 2026-04-28: Add Minimal Plan Today Flow
 
 Unplanned Active tasks can now be planned for today from the task row. This keeps Today simple: it still only queries planned-for-today, due-today, or completed-today tasks, while the service updates the existing task's `PlannedForDate` and records a `PlannedForDateChanged` event.
+
+## 2026-04-28: Start Details With Read-Only Selection
+
+Task row selection now populates the right details panel with persisted task data. Editing, archive/reopen controls, and markdown rendering remain deferred so the next UI step can build on a verified read-only selection path.
+
+## 2026-04-28: Make Title And Notes The First Writable Details Step
+
+The existing selected-task details panel now owns the first edit flow. Title and notes are editable in place, saved through `TaskService`, and reloaded after save so the task list and details panel stay consistent without introducing a separate detail editor abstraction yet.

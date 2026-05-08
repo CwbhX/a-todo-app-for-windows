@@ -1,6 +1,6 @@
 ---
 name: linework-smoke-test
-description: Create and maintain structured smoke-test instructions for the Linework WPF app. Use when the user asks for a Linework smoke test, smokescreen test, manual app test script, QA checklist, or wants to report app behavior as good/not good/details during local testing.
+description: Create focused smoke-test instructions for the Linework WPF app. Use when the user asks for a Linework smoke test, smokescreen test, manual app test script, QA checklist, or wants to report app behavior as good/not good/details during local testing.
 ---
 
 # Linework Smoke Test
@@ -8,6 +8,20 @@ description: Create and maintain structured smoke-test instructions for the Line
 ## Overview
 
 Give the user a manual smoke-test script for the current Linework development stage. Always include the command to run the app, group checks into major test areas with numbered subtests, and invite the user to answer each area with `Good`, `Not good`, or details.
+
+## Default Behavior
+
+Default to a targeted smoke test for the change that was just made. Do not repeat the entire smoke matrix unless the user asks for a full smoke/regression pass or the change touched broad app startup, navigation, persistence, or shared task-list behavior.
+
+When producing a targeted smoke test:
+
+- Infer the changed area from the latest code change, user prompt, or dev diary.
+- Include 1 to 3 focused test areas that directly exercise the change.
+- Add a tiny launch/navigation check only if the change affects app startup, shell layout, navigation, or shared UI.
+- Keep unchanged older flows out of the checklist unless they are needed setup for the changed behavior.
+- Keep known gaps out of the checklist unless they are directly relevant or the user asks.
+
+Use the full matrix below as a menu of reusable checks, not as the default response.
 
 ## Required Command
 
@@ -25,11 +39,11 @@ dotnet build
 dotnet test
 ```
 
-## Current Smoke Matrix
+## Current Smoke Check Menu
 
-Use these major test areas unless the repo has clearly moved beyond them.
+Use these checks selectively for targeted smokes, or all together for a full smoke/regression pass.
 
-### 1. Launch And Navigation
+### Launch And Navigation
 
 1. Start the app with the required command.
 2. Confirm the Linework window opens.
@@ -39,7 +53,7 @@ Use these major test areas unless the repo has clearly moved beyond them.
 
 Expected result: no crashes; Today, Active, and Done show task-list surfaces; other views may still be placeholders.
 
-### 2. Today Quick Add
+### Today Quick Add
 
 1. In Today, add a task with a unique title.
 2. Confirm it appears in Today.
@@ -50,7 +64,7 @@ Expected result: no crashes; Today, Active, and Done show task-list surfaces; ot
 
 Expected result: Today quick-add creates a persisted task planned for today.
 
-### 3. Active Quick Add And Plan Today
+### Active Quick Add And Plan Today
 
 1. In Active, add a task with a unique title.
 2. Confirm it appears in Active.
@@ -64,7 +78,7 @@ Expected result: Today quick-add creates a persisted task planned for today.
 
 Expected result: Active quick-add creates a persisted unplanned active task, and Plan today moves that task into Today.
 
-### 4. Mark Done
+### Mark Done
 
 1. Mark a visible active task done.
 2. Confirm the row becomes dimmer and struck through.
@@ -75,40 +89,55 @@ Expected result: Active quick-add creates a persisted unplanned active task, and
 
 Expected result: completion is persisted, and recent completions remain visible wherever the service query includes them.
 
-### 5. Known Current Gaps
+### Task Selection And Details
 
-Ask the user to note these as expected gaps, not failures:
+1. Select a visible task row in Today, Active, or Done.
+2. Confirm the right-side Task Details panel changes from `No task selected` to the selected task title.
+3. Confirm the details panel shows status, planned date, due date, completed date, and project.
+4. Confirm the title and notes fields are editable.
+5. Switch views and select another row.
+
+Expected result: row selection updates the details panel without crashing and loads the selected task into the editable fields.
+
+### Task Details Edit
+
+1. Select a visible task row in Today or Active.
+2. Change the title in the Task Details panel.
+3. Add or update the notes text.
+4. Click Save.
+5. Confirm the task row title updates.
+6. Select a different row and come back, or switch views and return.
+7. Confirm the saved title and notes are still present.
+
+Expected result: saving persists title and notes changes, and the refreshed details panel stays in sync with the selected row.
+
+### Known Current Gaps
+
+Mention these only when relevant:
 
 - no edit task UI
 - no reopen/archive UI
-- no task details behavior
+- no full markdown preview
 - no search UI behavior
-- no markdown preview
 - no production polish
 
 ## Response Format
 
-Present the checklist in this format:
+For targeted smokes, present only the selected checks:
 
 ```text
 Command:
 - ...
 
-Smoke Test:
-1. Launch And Navigation
-   1. ...
-   Expected: ...
-
-2. Today Quick Add
+Targeted Smoke Test:
+1. Changed Area Name
    1. ...
    Expected: ...
 
 Report Back:
-- 1 Launch And Navigation: Good / Not good / Details
-- 2 Today Quick Add: Good / Not good / Details
-- 3 Active Quick Add And Plan Today: Good / Not good / Details
-- 4 Mark Done: Good / Not good / Details
-- 5 Known Gaps: Anything surprising?
+- 1 Changed Area Name: Good / Not good / Details
 ```
+
+For full smokes, use the same format but title the section `Full Smoke Test` and include all applicable checks from the menu.
 
 When the user reports results, classify each major area as pass, expected limitation, or bug candidate. If something is a bug candidate, propose the smallest next implementation or diagnostic step.

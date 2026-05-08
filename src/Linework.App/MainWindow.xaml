@@ -86,10 +86,21 @@
                                TextWrapping="Wrap"
                                Margin="0,0,0,12" />
 
-                    <ItemsControl Grid.Row="2" ItemsSource="{Binding Tasks}">
-                        <ItemsControl.ItemTemplate>
+                    <ListBox Grid.Row="2"
+                             ItemsSource="{Binding Tasks}"
+                             SelectedItem="{Binding SelectedTaskRow, Mode=TwoWay}"
+                             Background="Transparent"
+                             BorderThickness="0">
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                <Setter Property="Padding" Value="0" />
+                                <Setter Property="Margin" Value="0,0,0,8" />
+                            </Style>
+                        </ListBox.ItemContainerStyle>
+                        <ListBox.ItemTemplate>
                             <DataTemplate>
-                                <Border Background="#FAFAFA" BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,0,0,8">
+                                <Border Background="#FAFAFA" BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="6" Padding="12">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
@@ -142,8 +153,8 @@
                                     </Grid>
                                 </Border>
                             </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
                 </Grid>
             </Border>
         </Grid>
@@ -151,8 +162,73 @@
         <Border Grid.Column="2" Background="{StaticResource PanelBackgroundBrush}" BorderBrush="#E5E7EB" BorderThickness="1,0,0,0" Padding="22">
             <StackPanel>
                 <TextBlock Text="Task Details" FontSize="20" FontWeight="SemiBold" />
-                <TextBlock Text="No task selected" Foreground="{StaticResource MutedTextBrush}" Margin="0,8,0,18" />
-                <TextBlock Text="This panel is reserved for title, project, important star, dates, reminders, markdown notes, archive, and reopen actions." TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" />
+                <TextBlock Text="{Binding TaskDetailsMessage}" Foreground="{StaticResource MutedTextBrush}" Margin="0,8,0,18">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Visibility" Value="Visible" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding HasSelectedTask}" Value="True">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+
+                <StackPanel>
+                    <StackPanel.Style>
+                        <Style TargetType="StackPanel">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding HasSelectedTask}" Value="True">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </StackPanel.Style>
+
+                    <TextBlock Text="Title" FontWeight="SemiBold" Margin="0,8,0,0" />
+                    <TextBox Text="{Binding EditableTaskTitle, UpdateSourceTrigger=PropertyChanged}"
+                             Margin="0,6,0,16"
+                             Padding="10,8"
+                             TextWrapping="Wrap"
+                             AcceptsReturn="False" />
+
+                    <TextBlock Text="Status" FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding SelectedTaskDetails.StatusText}" Foreground="{StaticResource MutedTextBrush}" Margin="0,3,0,12" />
+
+                    <TextBlock Text="Planned" FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding SelectedTaskDetails.PlannedDateText}" Foreground="{StaticResource MutedTextBrush}" Margin="0,3,0,12" />
+
+                    <TextBlock Text="Due" FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding SelectedTaskDetails.DueDateText}" Foreground="{StaticResource MutedTextBrush}" Margin="0,3,0,12" />
+
+                    <TextBlock Text="Completed" FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding SelectedTaskDetails.CompletedDateText}" Foreground="{StaticResource MutedTextBrush}" Margin="0,3,0,12" />
+
+                    <TextBlock Text="Project" FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding SelectedTaskDetails.ProjectNameText}" Foreground="{StaticResource MutedTextBrush}" Margin="0,3,0,12" />
+
+                    <TextBlock Text="Notes" FontWeight="SemiBold" />
+                    <TextBox Text="{Binding EditableTaskNotes, UpdateSourceTrigger=PropertyChanged}"
+                             Margin="0,6,0,12"
+                             Padding="10,8"
+                             MinHeight="140"
+                             VerticalScrollBarVisibility="Auto"
+                             TextWrapping="Wrap"
+                             AcceptsReturn="True" />
+
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <Button Content="Save"
+                                Command="{Binding SaveTaskDetailsCommand}"
+                                Padding="14,8"
+                                MinWidth="84" />
+                        <TextBlock Text="{Binding TaskDetailsStatusMessage}"
+                                   Foreground="{StaticResource MutedTextBrush}"
+                                   VerticalAlignment="Center"
+                                   Margin="12,0,0,0" />
+                    </StackPanel>
+                </StackPanel>
             </StackPanel>
         </Border>
     </Grid>

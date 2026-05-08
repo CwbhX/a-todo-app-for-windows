@@ -177,6 +177,26 @@ public sealed class TaskServiceTests
     }
 
     [Fact]
+    public async Task UpdateTaskDetails_updates_title_and_notes_and_records_edited_event()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var factory = new TestDbFactory();
+        await using var dbContext = await factory.CreateAsync(ct);
+        var clock = new FixedClock(new DateTimeOffset(2026, 4, 27, 12, 0, 0, TimeSpan.Zero));
+        var service = CreateService(dbContext, clock);
+        var task = await service.CreateTaskAsync(new CreateTaskRequest("Draft notes", MarkdownNotes: "Before"), ct);
+
+        clock.Now = clock.Now.AddMinutes(30);
+        await service.UpdateTaskDetailsAsync(task.Id, new UpdateTaskDetailsRequest("Draft notes v2", "After"), ct);
+
+        var saved = await dbContext.TaskItems.SingleAsync(item => item.Id == task.Id, ct);
+        Assert.Equal("Draft notes v2", saved.Title);
+        Assert.Equal("After", saved.MarkdownNotes);
+        Assert.Equal(clock.Now, saved.UpdatedAt);
+        Assert.Contains(await dbContext.TaskEvents.Where(item => item.TaskItemId == task.Id).ToListAsync(ct), item => item.EventType == TaskEventType.Edited);
+    }
+
+    [Fact]
     public async Task PlanForToday_sets_planned_date_and_records_event()
     {
         var ct = TestContext.Current.CancellationToken;
